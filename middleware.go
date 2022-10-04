@@ -55,8 +55,9 @@ func Middleware(next http.Handler) http.Handler {
 			},
 		}
 
-		// Marshall the payload to bytes
-		reqBytes, err := json.Marshal(logPayload)
+		// Marshall the payload to bytes. Using MarshalIndent for now as we're just logging it & it makes it easier to read.
+		// TODO: revert to json.Marshal when actually sending to Firetail endpoint
+		reqBytes, err := json.MarshalIndent(logPayload, "", "	")
 		if err != nil {
 			log.Println("Err marshalling requestPayload to bytes, err:", err.Error())
 			return
