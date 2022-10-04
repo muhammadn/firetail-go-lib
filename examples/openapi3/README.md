@@ -6,7 +6,7 @@ This prototype currently has a single `/health` endpoint, implemented as describ
 
 ## Development Environment
 
-[Install Golang](https://go.dev/doc/install), clone the repo & build the web server:
+[Install Golang](https://go.dev/doc/install), clone the repo, build the web server & run it:
 
 ```bash
 git clone git@github.com:FireTail-io/firetail-go-lib.git
