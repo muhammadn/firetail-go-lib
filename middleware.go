@@ -57,6 +57,7 @@ func Middleware(next http.Handler) http.Handler {
 		reqBytes, err := json.Marshal(logPayload)
 		if err != nil {
 			log.Println("Err marshalling requestPayload to bytes, err:", err.Error())
+			return
 		}
 
 		// TODO: queue to be sent to logging endpoint.
