@@ -22,8 +22,7 @@ type RequestPayload struct {
 
 // The responsePayload struct holds the information about the response payload that is passed to the firetail logging endpoint
 type ResponsePayload struct {
-	StatusCode    int                 `json:"statusCode"`
-	ContentLength int                 `json:"contentLength"`
-	Body          string              `json:"body"`
-	Headers       map[string][]string `json:"headers"` // TODO: ensure type matches python lib
+	StatusCode int                 `json:"statusCode"`
+	Body       string              `json:"body"`
+	Headers    map[string][]string `json:"headers"` // TODO: ensure type matches python lib
 }

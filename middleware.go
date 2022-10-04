@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -47,10 +48,9 @@ func Middleware(next http.Handler) http.Handler {
 				Ip:           strings.Split(r.RemoteAddr, ":")[0], // TODO: what if the req is proxied? Should allow custom func? E.g. to use X-Forwarded-For header etc.
 			},
 			Response: ResponsePayload{
-				StatusCode:    responseWriter.statusCode,
-				ContentLength: len(responseWriter.responseBody),
-				Body:          string(responseWriter.responseBody),
-				Headers:       responseWriter.Header(),
+				StatusCode: responseWriter.statusCode,
+				Body:       string(responseWriter.responseBody),
+				Headers:    responseWriter.Header(),
 			},
 		}
 
