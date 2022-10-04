@@ -22,11 +22,12 @@ func Middleware(next http.Handler) http.Handler {
 
 		// TODO: validate the request against the openapi spec
 
-		// TODO: replace w (http.ResponseWriter) with custom responsewriter struct which keeps note of the status code
+		// Create custom responseWriter so we can extract the response body
+		responseWriter := &customResponseWriter{w, 0, nil}
 
 		// Serve the next handler down the chain & take note of the execution time
 		startTime := time.Now()
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(responseWriter, r)
 		executionTime := time.Since(startTime)
 
 		// TODO: validate the response against the openapi spec
@@ -46,13 +47,11 @@ func Middleware(next http.Handler) http.Handler {
 				Ip:           r.RemoteAddr, // TODO: what if the req is proxied? Should allow custom func? E.g. to use X-Forwarded-For header etc.
 			},
 			Resp: ResponsePayload{
-				Status_code:     0,
-				Content_len:     0,
-				Content_enc:     "",
-				Failed_res_body: "",
-				Body:            "",
-				Headers:         map[string][]string{},
-				Content_type:    "",
+				Status_code: responseWriter.statusCode,
+				Content_len: len(responseWriter.responseBody),
+				Content_enc: "", // Not sure how to get this rn
+				Body:        string(responseWriter.responseBody),
+				Headers:     responseWriter.Header(),
 			},
 		}
 
