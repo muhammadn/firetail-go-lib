@@ -34,11 +34,11 @@ func Middleware(next http.Handler) http.Handler {
 
 		// Create our payload to send to the firetail logging endpoint
 		logPayload := LoggingPayload{
-			Version:        "",
-			DateCreated:    time.Now().UnixMilli(),
-			Execution_time: executionTime.Milliseconds(),
-			Source_code:    "",
-			Req: RequestPayload{
+			Version:       "",
+			DateCreated:   time.Now().UnixMilli(),
+			ExecutionTime: executionTime.Milliseconds(),
+			SourceCode:    "",
+			Request: RequestPayload{
 				HttpProtocol: r.Proto,
 				Url:          r.Host + r.URL.Path + "?" + r.URL.RawQuery,
 				Headers:      r.Header,
@@ -46,11 +46,11 @@ func Middleware(next http.Handler) http.Handler {
 				Body:         string(requestBody),
 				Ip:           r.RemoteAddr, // TODO: what if the req is proxied? Should allow custom func? E.g. to use X-Forwarded-For header etc.
 			},
-			Resp: ResponsePayload{
-				Status_code: responseWriter.statusCode,
-				Content_len: len(responseWriter.responseBody),
-				Body:        string(responseWriter.responseBody),
-				Headers:     responseWriter.Header(),
+			Response: ResponsePayload{
+				StatusCode:    responseWriter.statusCode,
+				ContentLength: len(responseWriter.responseBody),
+				Body:          string(responseWriter.responseBody),
+				Headers:       responseWriter.Header(),
 			},
 		}
 
