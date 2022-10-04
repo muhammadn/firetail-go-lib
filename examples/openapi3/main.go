@@ -11,6 +11,7 @@ func health(w http.ResponseWriter, r *http.Request) {
 	res := "I'm Healthy!"
 	log.Println(res)
 	w.WriteHeader(200)
+	w.Header().Add("example-header", "example-value")
 	w.Write([]byte(res))
 }
 
