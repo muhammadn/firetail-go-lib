@@ -30,10 +30,10 @@ I'm Healthy!
 And the logs of the server should (currently) read something a little like this:
 
 ```
-2022/10/04 16:02:02 I'm Healthy, and I take some time!
-2022/10/04 16:02:02 Request body to be sent to Firetail logging endpoint: {
+2022/10/04 16:11:53 I'm Healthy, and I take some time!
+2022/10/04 16:11:53 Request body to be sent to Firetail logging endpoint: {
         "version": "",
-        "dateCreated": 1664895722166,
+        "dateCreated": 1664896313861,
         "executionTime": 50,
         "sourceCode": "",
         "request": {
@@ -55,15 +55,15 @@ And the logs of the server should (currently) read something a little like this:
                 },
                 "method": "POST",
                 "body": "{\"example\":\"body\"}",
-                "ip": "127.0.0.1:50496"
+                "ip": "127.0.0.1:50562"
         },
         "response": {
                 "statusCode": 200,
                 "contentLength": 34,
                 "body": "I'm Healthy, and I take some time!",
                 "headers": {
-                        "Example-Header": [
-                                "example-value"
+                        "Content-Type": [
+                                "text/html"
                         ]
                 }
         }
