@@ -24,7 +24,6 @@ type RequestPayload struct {
 type ResponsePayload struct {
 	Status_code int                 `json:"status_code"`
 	Content_len int                 `json:"content_len"`
-	Content_enc string              `json:"content_enc"`
 	Body        string              `json:"body"`
 	Headers     map[string][]string `json:"headers"` // TODO: ensure type matches python lib
 }

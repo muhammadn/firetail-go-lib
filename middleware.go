@@ -49,7 +49,6 @@ func Middleware(next http.Handler) http.Handler {
 			Resp: ResponsePayload{
 				Status_code: responseWriter.statusCode,
 				Content_len: len(responseWriter.responseBody),
-				Content_enc: "", // Not sure how to get this rn
 				Body:        string(responseWriter.responseBody),
 				Headers:     responseWriter.Header(),
 			},
