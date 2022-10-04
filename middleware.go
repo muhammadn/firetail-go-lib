@@ -39,16 +39,11 @@ func Middleware(next http.Handler) http.Handler {
 			Source_code:    "",
 			Req: RequestPayload{
 				HttpProtocol: r.Proto,
-				Url:          "", // TODO
+				Url:          r.Host + r.URL.Path + "?" + r.URL.RawQuery,
 				Headers:      r.Header,
-				Path:         r.URL.Path,
 				Method:       r.Method,
-				OPath:        "",            // TODO
-				FPath:        "",            // TODO
-				Args:         r.URL.Query(), // TODO: check matches python lib
 				Body:         string(requestBody),
 				Ip:           r.RemoteAddr, // TODO: what if the req is proxied? Should allow custom func? E.g. to use X-Forwarded-For header etc.
-				PathParams:   "",
 			},
 			Resp: ResponsePayload{
 				Status_code:     0,
