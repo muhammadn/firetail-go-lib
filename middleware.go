@@ -1,7 +1,10 @@
 package firetail
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -9,8 +12,13 @@ import (
 
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Read in the body from r.Body using a teereader
-		requestBody := ""
+		// Read in the request body & replace r.Body with a new copy for the next http.Handler to read from
+		requestBody, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Println("Error reading in request body, err:", err.Error())
+			return
+		}
+		r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 
 		// TODO: validate the request against the openapi spec
 
@@ -38,7 +46,7 @@ func Middleware(next http.Handler) http.Handler {
 				OPath:        "",            // TODO
 				FPath:        "",            // TODO
 				Args:         r.URL.Query(), // TODO: check matches python lib
-				Body:         requestBody,
+				Body:         string(requestBody),
 				Ip:           r.RemoteAddr, // TODO: what if the req is proxied? Should allow custom func? E.g. to use X-Forwarded-For header etc.
 				PathParams:   "",
 			},
