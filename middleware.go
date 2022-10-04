@@ -44,7 +44,7 @@ func Middleware(next http.Handler) http.Handler {
 				Headers:      r.Header,
 				Method:       r.Method,
 				Body:         string(requestBody),
-				Ip:           r.RemoteAddr, // TODO: what if the req is proxied? Should allow custom func? E.g. to use X-Forwarded-For header etc.
+				Ip:           strings.Split(r.RemoteAddr, ":")[0], // TODO: what if the req is proxied? Should allow custom func? E.g. to use X-Forwarded-For header etc.
 			},
 			Response: ResponsePayload{
 				StatusCode:    responseWriter.statusCode,
