@@ -1,4 +1,4 @@
-package firetail
+package utils
 
 type ValidationError struct {
 	Reason string

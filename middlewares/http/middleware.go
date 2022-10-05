@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/FireTail-io/firetail-go-lib/logging"
+	"github.com/FireTail-io/firetail-go-lib/utils"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers"
@@ -16,14 +18,14 @@ import (
 )
 
 // MiddlewareOptions is an options struct used when creating a Firetail middleware
-type MiddlewareOptions struct {
+type Options struct {
 	SpecPath          string                       // Path at which an openapi spec can be found
 	SourceIPCallback  func(r *http.Request) string // An optional callback which takes the http.Request and returns the source IP of the request as a string.
 	DisableValidation *bool                        // An optional flag to disable request & response validation; validation is enabled by default
 }
 
 // GetFiretailMiddleware creates & returns a firetail middleware. Errs if the openapi spec can't be found, validated, or loaded into a gorillamux router.
-func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Handler, error) {
+func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, error) {
 	// Load in our appspec, validate it & create a router from it.
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
 	doc, err := loader.LoadFromFile(options.SpecPath)
@@ -52,13 +54,13 @@ func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Han
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 
 			// Create custom responseWriter so we can extract the response body written further down the chain for validation & logging later
-			draftResponseWriter := &draftResponseWriter{w, 0, nil}
+			draftResponseWriter := &utils.DraftResponseWriter{ResponseWriter: w, StatusCode: 0, ResponseBody: nil}
 
 			// If validation has been disabled, everything is far simpler...
 			if options.DisableValidation != nil && *options.DisableValidation {
 				executionTime := handleRequestWithoutValidation(draftResponseWriter, r, next)
 				draftResponseWriter.Publish()
-				logRequest(r, draftResponseWriter, requestBody, executionTime, options)
+				logging.LogRequest(r, draftResponseWriter, requestBody, executionTime, options.SourceIPCallback)
 			}
 
 			// If the request validation hasn't been disabled, then we handle the request with validation
@@ -70,11 +72,11 @@ func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Han
 				w.WriteHeader(404)
 				w.Write([]byte("404 - Not Found"))
 				return
-			case RequestValidationError:
+			case utils.RequestValidationError:
 				w.WriteHeader(400)
 				w.Write([]byte("400 - Bad Request"))
 				return
-			case ResponseValidationError:
+			case utils.ResponseValidationError:
 				w.WriteHeader(500)
 				w.Write([]byte("500 - Internal Server Error"))
 				return
@@ -92,7 +94,7 @@ func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Han
 			draftResponseWriter.Publish()
 
 			// And, finally, log it :)
-			logRequest(r, draftResponseWriter, requestBody, executionTime, options)
+			logging.LogRequest(r, draftResponseWriter, requestBody, executionTime, options.SourceIPCallback)
 		})
 
 		return handler
@@ -101,14 +103,14 @@ func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Han
 	return middleware, nil
 }
 
-func handleRequestWithoutValidation(w *draftResponseWriter, r *http.Request, next http.Handler) time.Duration {
+func handleRequestWithoutValidation(w *utils.DraftResponseWriter, r *http.Request, next http.Handler) time.Duration {
 	// There's no validation to do; we've just got to record the execution time
 	startTime := time.Now()
 	next.ServeHTTP(w, r)
 	return time.Since(startTime)
 }
 
-func handleRequestWithValidation(w *draftResponseWriter, r *http.Request, next http.Handler, router routers.Router) (time.Duration, error) {
+func handleRequestWithValidation(w *utils.DraftResponseWriter, r *http.Request, next http.Handler, router routers.Router) (time.Duration, error) {
 	// Check there's a corresponding route for this request
 	route, pathParams, err := router.FindRoute(r)
 	if err == routers.ErrPathNotFound {
@@ -125,7 +127,7 @@ func handleRequestWithValidation(w *draftResponseWriter, r *http.Request, next h
 	}
 	err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 	if err != nil {
-		return time.Duration(0), RequestValidationError
+		return time.Duration(0), utils.RequestValidationError
 	}
 
 	// Serve the next handler down the chain & take note of the execution time
@@ -140,16 +142,16 @@ func handleRequestWithValidation(w *draftResponseWriter, r *http.Request, next h
 			PathParams: pathParams,
 			Route:      route,
 		},
-		Status: w.statusCode,
+		Status: w.StatusCode,
 		Header: w.Header(),
 		Options: &openapi3filter.Options{
 			IncludeResponseStatus: true,
 		},
 	}
-	responseValidationInput.SetBodyBytes(w.responseBody)
+	responseValidationInput.SetBodyBytes(w.ResponseBody)
 	err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
 	if err != nil {
-		return time.Duration(0), ResponseValidationError
+		return time.Duration(0), utils.ResponseValidationError
 	}
 
 	return executionTime, nil

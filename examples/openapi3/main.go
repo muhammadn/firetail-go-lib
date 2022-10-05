@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/FireTail-io/firetail-go-lib"
+	firetail "github.com/FireTail-io/firetail-go-lib/middlewares/http"
 )
 
 func health(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +23,7 @@ func health(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// Get a firetail middleware
-	firetailMiddleware, err := firetail.GetMiddleware(&firetail.MiddlewareOptions{
+	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 		SpecPath: "app-spec.yaml",
 	})
 	if err != nil {

@@ -4,7 +4,7 @@
 //    logEntry, err := UnmarshalLogEntry(bytes)
 //    bytes, err = logEntry.Marshal()
 
-package firetail
+package logging
 
 import "encoding/json"
 

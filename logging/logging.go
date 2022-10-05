@@ -1,4 +1,4 @@
-package firetail
+package logging
 
 import (
 	"encoding/json"
@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/FireTail-io/firetail-go-lib/utils"
 )
 
 // WIP
@@ -23,7 +25,7 @@ import (
 // }
 
 // TODO: refactor
-func logRequest(r *http.Request, w *draftResponseWriter, requestBody []byte, executionTime time.Duration, options *MiddlewareOptions) {
+func LogRequest(r *http.Request, w *utils.DraftResponseWriter, requestBody []byte, executionTime time.Duration, sourceIPCallback func(r *http.Request) string) {
 	// Create our payload to send to the firetail logging endpoint
 	logPayload := LogEntry{
 		Version:       The100Alpha,
@@ -38,8 +40,8 @@ func logRequest(r *http.Request, w *draftResponseWriter, requestBody []byte, exe
 			IP:           "", // We'll fill this in later.
 		},
 		Response: Response{
-			StatusCode: int64(w.statusCode),
-			Body:       string(w.responseBody),
+			StatusCode: int64(w.StatusCode),
+			Body:       string(w.ResponseBody),
 			Headers:    w.Header(),
 		},
 	}
@@ -48,8 +50,8 @@ func logRequest(r *http.Request, w *draftResponseWriter, requestBody []byte, exe
 	} else {
 		logPayload.Request.URI = "http://" + r.Host + r.URL.RequestURI()
 	}
-	if options.SourceIPCallback != nil {
-		logPayload.Request.IP = options.SourceIPCallback(r)
+	if sourceIPCallback != nil {
+		logPayload.Request.IP = sourceIPCallback(r)
 	} else {
 		logPayload.Request.IP = strings.Split(r.RemoteAddr, ":")[0]
 	}
