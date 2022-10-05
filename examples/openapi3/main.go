@@ -30,7 +30,7 @@ func main() {
 
 	// We can setup our handler as usual, just wrap it in the firetailMiddleware :)
 	healthHandler := firetailMiddleware(http.HandlerFunc(health))
-	http.Handle("/", healthHandler)
+	http.Handle("/health", healthHandler)
 
 	http.ListenAndServe(":8080", nil)
 }
