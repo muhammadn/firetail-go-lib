@@ -13,4 +13,4 @@ paths:
             text/plain:
               schema:
                 type: string
-                example: I'm Healthy!
+                enum: ["I'm Healthy!"]
