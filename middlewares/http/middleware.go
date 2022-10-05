@@ -3,10 +3,12 @@ package firetail
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/FireTail-io/firetail-go-lib/logging"
@@ -60,7 +62,9 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			if options.DisableValidation != nil && *options.DisableValidation {
 				executionTime := handleWithoutValidation(draftResponseWriter, r, next)
 				draftResponseWriter.Publish()
-				logging.LogRequest(r, draftResponseWriter, requestBody, executionTime, options.SourceIPCallback)
+				logEntry := createLogEntry(r, draftResponseWriter, requestBody, executionTime, options.SourceIPCallback)
+				// TODO: queue to be sent to logging endpoint. Prettyprinting here for now.
+				prettyprintLogEntry(logEntry)
 			}
 
 			// If the request validation hasn't been disabled, then we handle the request with validation
@@ -94,7 +98,10 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			draftResponseWriter.Publish()
 
 			// And, finally, log it :)
-			logging.LogRequest(r, draftResponseWriter, requestBody, executionTime, options.SourceIPCallback)
+			logEntry := createLogEntry(r, draftResponseWriter, requestBody, executionTime, options.SourceIPCallback)
+
+			// TODO: queue to be sent to logging endpoint. Prettyprinting here for now.
+			prettyprintLogEntry(logEntry)
 		})
 
 		return handler
@@ -155,4 +162,48 @@ func handleWithValidation(w *utils.DraftResponseWriter, r *http.Request, next ht
 	}
 
 	return executionTime, nil
+}
+
+func createLogEntry(r *http.Request, w *utils.DraftResponseWriter, requestBody []byte, executionTime time.Duration, sourceIPCallback func(r *http.Request) string) logging.LogEntry {
+	// Create our payload to send to the firetail logging endpoint
+	logEntry := logging.LogEntry{
+		Version:       logging.The100Alpha,
+		DateCreated:   time.Now().UnixMilli(),
+		ExecutionTime: float64(executionTime.Milliseconds()),
+		Request: logging.Request{
+			HTTPProtocol: logging.HTTPProtocol(r.Proto),
+			URI:          "", // We'll fill this in later.
+			Headers:      r.Header,
+			Method:       logging.Method(r.Method),
+			Body:         string(requestBody),
+			IP:           "", // We'll fill this in later.
+		},
+		Response: logging.Response{
+			StatusCode: int64(w.StatusCode),
+			Body:       string(w.ResponseBody),
+			Headers:    w.Header(),
+		},
+	}
+	if r.TLS != nil {
+		logEntry.Request.URI = "https://" + r.Host + r.URL.RequestURI()
+	} else {
+		logEntry.Request.URI = "http://" + r.Host + r.URL.RequestURI()
+	}
+	if sourceIPCallback != nil {
+		logEntry.Request.IP = sourceIPCallback(r)
+	} else {
+		logEntry.Request.IP = strings.Split(r.RemoteAddr, ":")[0]
+	}
+
+	return logEntry
+}
+
+// TODO: remove - this is a temp func until log queueing is implemented.
+func prettyprintLogEntry(logEntry logging.LogEntry) {
+	reqBytes, err := json.MarshalIndent(logEntry, "", "	")
+	if err != nil {
+		log.Println("Err marshalling requestPayload to bytes, err:", err.Error())
+		return
+	}
+	log.Println("Request body to be sent to Firetail logging endpoint:", string(reqBytes))
 }
