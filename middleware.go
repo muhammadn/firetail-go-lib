@@ -84,6 +84,9 @@ func GetMiddleware(appSpecPath string) (func(next http.Handler) http.Handler, er
 				RequestValidationInput: requestValidationInput,
 				Status:                 responseWriter.statusCode,
 				Header:                 responseWriter.Header(),
+				Options: &openapi3filter.Options{
+					IncludeResponseStatus: true,
+				},
 			}
 			responseValidationInput.SetBodyBytes(responseWriter.responseBody)
 			err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
