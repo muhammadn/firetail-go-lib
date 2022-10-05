@@ -23,7 +23,7 @@ import (
 // }
 
 // TODO: refactor
-func logRequest(r *http.Request, responseWriter *draftResponseWriter, requestBody []byte, executionTime time.Duration, options *MiddlewareOptions) {
+func logRequest(r *http.Request, w *draftResponseWriter, requestBody []byte, executionTime time.Duration, options *MiddlewareOptions) {
 	// Create our payload to send to the firetail logging endpoint
 	logPayload := LogEntry{
 		Version:       The100Alpha,
@@ -38,9 +38,9 @@ func logRequest(r *http.Request, responseWriter *draftResponseWriter, requestBod
 			IP:           "", // We'll fill this in later.
 		},
 		Response: Response{
-			StatusCode: int64(responseWriter.statusCode),
-			Body:       string(responseWriter.responseBody),
-			Headers:    responseWriter.Header(),
+			StatusCode: int64(w.statusCode),
+			Body:       string(w.responseBody),
+			Headers:    w.Header(),
 		},
 	}
 	if r.TLS != nil {
