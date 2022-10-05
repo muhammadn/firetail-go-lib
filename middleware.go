@@ -15,13 +15,14 @@ import (
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 )
 
+// MiddlewareOptions is an options struct used when creating a Firetail middleware
 type MiddlewareOptions struct {
 	SpecPath          string                       // Path at which an openapi spec can be found
 	SourceIPCallback  func(r *http.Request) string // An optional callback which takes the http.Request and returns the source IP of the request as a string.
 	DisableValidation *bool                        // An optional flag to disable request & response validation; validation is enabled by default
 }
 
-// GetFiretailMiddleware creates & returns a firetail middleware which will use the openapi3 spec found at `appSpecPath`.
+// GetFiretailMiddleware creates & returns a firetail middleware. Errs if the openapi spec can't be found, validated, or loaded into a gorillamux router.
 func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Handler, error) {
 	// Load in our appspec, validate it & create a router from it.
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
@@ -50,7 +51,7 @@ func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Han
 			}
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 
-			// Create custom responseWriter so we can extract the response body written further down the chain
+			// Create custom responseWriter so we can extract the response body written further down the chain for validation & logging later
 			draftResponseWriter := &draftResponseWriter{w, 0, nil}
 
 			// If validation has been disabled, everything is far simpler...
@@ -60,7 +61,7 @@ func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Han
 				logRequest(r, draftResponseWriter, requestBody, executionTime, options)
 			}
 
-			// If the request validation hasn't been disabled, then we handle the request with validation...
+			// If the request validation hasn't been disabled, then we handle the request with validation
 			executionTime, err := handleRequestWithValidation(draftResponseWriter, r, next, router)
 
 			// Depending upon the err we get, we may need to override the response with a particular code & body
@@ -78,8 +79,10 @@ func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Han
 				w.Write([]byte("500 - Internal Server Error"))
 				return
 			case nil:
+				// Happy path is nil, so just break
 				break
 			default:
+				// If we get any other non-nil err we return a generic 500
 				w.WriteHeader(500)
 				w.Write([]byte("500 - Internal Server Error"))
 				return
@@ -99,6 +102,7 @@ func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Han
 }
 
 func handleRequestWithoutValidation(w *draftResponseWriter, r *http.Request, next http.Handler) time.Duration {
+	// There's no validation to do; we've just got to record the execution time
 	startTime := time.Now()
 	next.ServeHTTP(w, r)
 	return time.Since(startTime)
@@ -113,8 +117,7 @@ func handleRequestWithValidation(w *draftResponseWriter, r *http.Request, next h
 		return time.Duration(0), err
 	}
 
-	// Validate the request against the OpenAPI spec.
-	// We'll also need the requestValidationInput again later when validating the response.
+	// Validate the request against the OpenAPI spec. We'll also need the requestValidationInput again later when validating the response.
 	requestValidationInput := &openapi3filter.RequestValidationInput{
 		Request:    r,
 		PathParams: pathParams,
