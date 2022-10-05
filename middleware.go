@@ -51,17 +51,17 @@ func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Han
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 
 			// Create custom responseWriter so we can extract the response body written further down the chain
-			responseWriter := &draftResponseWriter{w, 0, nil}
+			draftResponseWriter := &draftResponseWriter{w, 0, nil}
 
 			// If validation has been disabled, everything is far simpler...
 			if options.DisableValidation != nil && *options.DisableValidation {
-				executionTime := handleRequestWithoutValidation(responseWriter, r, next)
-				responseWriter.Publish()
-				logRequest(r, responseWriter, requestBody, executionTime, options)
+				executionTime := handleRequestWithoutValidation(draftResponseWriter, r, next)
+				draftResponseWriter.Publish()
+				logRequest(r, draftResponseWriter, requestBody, executionTime, options)
 			}
 
 			// If the request validation hasn't been disabled, then we handle the request with validation...
-			executionTime, err := handleRequestWithValidation(responseWriter, r, next, router)
+			executionTime, err := handleRequestWithValidation(draftResponseWriter, r, next, router)
 
 			// Depending upon the err we get, we may need to override the response with a particular code & body
 			switch err {
@@ -86,10 +86,10 @@ func GetMiddleware(options *MiddlewareOptions) (func(next http.Handler) http.Han
 			}
 
 			// If the response passed the validation, we can now publish it
-			responseWriter.Publish()
+			draftResponseWriter.Publish()
 
 			// And, finally, log it :)
-			logRequest(r, responseWriter, requestBody, executionTime, options)
+			logRequest(r, draftResponseWriter, requestBody, executionTime, options)
 		})
 
 		return handler
