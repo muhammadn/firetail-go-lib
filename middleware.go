@@ -34,21 +34,20 @@ func Middleware(next http.Handler) http.Handler {
 		// TODO: validate the response against the openapi spec
 
 		// Create our payload to send to the firetail logging endpoint
-		logPayload := LoggingPayload{
-			Version:       "",
+		logPayload := LogEntry{
+			Version:       The100Alpha,
 			DateCreated:   time.Now().UnixMilli(),
-			ExecutionTime: executionTime.Milliseconds(),
-			SourceCode:    "",
-			Request: RequestPayload{
-				HttpProtocol: r.Proto,
-				Url:          r.Host + r.URL.Path + "?" + r.URL.RawQuery,
+			ExecutionTime: float64(executionTime.Milliseconds()),
+			Request: Request{
+				HTTPProtocol: HTTPProtocol(r.Proto),
+				URI:          r.Host + r.URL.Path + "?" + r.URL.RawQuery,
 				Headers:      r.Header,
-				Method:       r.Method,
+				Method:       Method(r.Method),
 				Body:         string(requestBody),
-				Ip:           strings.Split(r.RemoteAddr, ":")[0], // TODO: what if the req is proxied? Should allow custom func? E.g. to use X-Forwarded-For header etc.
+				IP:           strings.Split(r.RemoteAddr, ":")[0], // TODO: what if the req is proxied? Should allow custom func? E.g. to use X-Forwarded-For header etc.
 			},
-			Response: ResponsePayload{
-				StatusCode: responseWriter.statusCode,
+			Response: Response{
+				StatusCode: int64(responseWriter.statusCode),
 				Body:       string(responseWriter.responseBody),
 				Headers:    responseWriter.Header(),
 			},
