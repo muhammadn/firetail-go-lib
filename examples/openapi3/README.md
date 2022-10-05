@@ -18,27 +18,23 @@ go build -o openapi3-example
 Curl it!
 
 ```bash
-curl 'localhost:8080/example-path?example-param=example-value' -H 'Content-Type: application/json' -d '{"example":"body"}'
+curl 'localhost:8080/health?example-param=example-value' -H 'Content-Type: application/json' -d '{"example":"body"}' -X GET
 ```
 
 You should get the following response:
 
 ```
-I'm Healthy!
+I'm Healthy, and I take some time!
 ```
 
 And the logs of the server should (currently) read something a little like this:
 
 ```
-2022/10/04 16:11:53 I'm Healthy, and I take some time!
-2022/10/04 16:11:53 Request body to be sent to Firetail logging endpoint: {
-        "version": "",
-        "dateCreated": 1664896313861,
-        "executionTime": 50,
-        "sourceCode": "",
+2022/10/05 10:52:46 Request body to be sent to Firetail logging endpoint: {
+        "dateCreated": 1664963566352,
+        "executionTime": 51,
         "request": {
-                "httpProtocol": "HTTP/1.1",
-                "url": "localhost:8080/example-path?example-param=example-value",
+                "body": "{\"example\":\"body\"}",
                 "headers": {
                         "Accept": [
                                 "*/*"
@@ -53,20 +49,21 @@ And the logs of the server should (currently) read something a little like this:
                                 "curl/7.79.1"
                         ]
                 },
-                "method": "POST",
-                "body": "{\"example\":\"body\"}",
-                "ip": "127.0.0.1:50562"
+                "httpProtocol": "HTTP/1.1",
+                "ip": "127.0.0.1",
+                "method": "GET",
+                "uri": "http://localhost:8080/health?example-param=example-value"
         },
         "response": {
-                "statusCode": 200,
-                "contentLength": 34,
                 "body": "I'm Healthy, and I take some time!",
                 "headers": {
                         "Content-Type": [
                                 "text/html"
                         ]
-                }
-        }
+                },
+                "statusCode": 200
+        },
+        "version": "1.0.0-alpha"
 }
 ```
 
