@@ -85,7 +85,7 @@ func GetFiretailMiddleware(appSpecPath string) (func(next http.Handler) http.Han
 				Status:                 responseWriter.statusCode,
 				Header:                 responseWriter.Header(),
 			}
-			responseValidationInput.SetBodyBytes(requestBody)
+			responseValidationInput.SetBodyBytes(responseWriter.responseBody)
 			err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
 			if err != nil {
 				log.Println("Err in response body: ", err.Error())
