@@ -24,14 +24,14 @@ curl 'localhost:8080/health?example-param=example-value' -H 'Content-Type: appli
 You should get the following response:
 
 ```
-I'm Healthy, and I take some time!
+I'm Healthy!
 ```
 
 And the logs of the server should (currently) read something a little like this:
 
 ```
-2022/10/05 10:52:46 Request body to be sent to Firetail logging endpoint: {
-        "dateCreated": 1664963566352,
+2022/10/05 11:30:05 Request body to be sent to Firetail logging endpoint: {
+        "dateCreated": 1664965805828,
         "executionTime": 51,
         "request": {
                 "body": "{\"example\":\"body\"}",
@@ -55,10 +55,10 @@ And the logs of the server should (currently) read something a little like this:
                 "uri": "http://localhost:8080/health?example-param=example-value"
         },
         "response": {
-                "body": "I'm Healthy, and I take some time!",
+                "body": "I'm Healthy!",
                 "headers": {
                         "Content-Type": [
-                                "text/html"
+                                "text/plain"
                         ]
                 },
                 "statusCode": 200
