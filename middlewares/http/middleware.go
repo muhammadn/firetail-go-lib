@@ -58,13 +58,13 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 			// If validation has been disabled, everything is far simpler...
 			if options.DisableValidation != nil && *options.DisableValidation {
-				executionTime := handleRequestWithoutValidation(draftResponseWriter, r, next)
+				executionTime := handleWithoutValidation(draftResponseWriter, r, next)
 				draftResponseWriter.Publish()
 				logging.LogRequest(r, draftResponseWriter, requestBody, executionTime, options.SourceIPCallback)
 			}
 
 			// If the request validation hasn't been disabled, then we handle the request with validation
-			executionTime, err := handleRequestWithValidation(draftResponseWriter, r, next, router)
+			executionTime, err := handleWithValidation(draftResponseWriter, r, next, router)
 
 			// Depending upon the err we get, we may need to override the response with a particular code & body
 			switch err {
@@ -103,14 +103,14 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	return middleware, nil
 }
 
-func handleRequestWithoutValidation(w *utils.DraftResponseWriter, r *http.Request, next http.Handler) time.Duration {
+func handleWithoutValidation(w *utils.DraftResponseWriter, r *http.Request, next http.Handler) time.Duration {
 	// There's no validation to do; we've just got to record the execution time
 	startTime := time.Now()
 	next.ServeHTTP(w, r)
 	return time.Since(startTime)
 }
 
-func handleRequestWithValidation(w *utils.DraftResponseWriter, r *http.Request, next http.Handler, router routers.Router) (time.Duration, error) {
+func handleWithValidation(w *utils.DraftResponseWriter, r *http.Request, next http.Handler, router routers.Router) (time.Duration, error) {
 	// Check there's a corresponding route for this request
 	route, pathParams, err := router.FindRoute(r)
 	if err == routers.ErrPathNotFound {
