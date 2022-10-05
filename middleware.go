@@ -43,20 +43,20 @@ func GetFiretailMiddleware(appSpecPath string) (func(next http.Handler) http.Han
 				w.Write([]byte("404 - Not Found"))
 				return
 			} else if err != nil {
+				log.Println("Err finding corresponding route to req:", err.Error())
 				w.WriteHeader(500)
-				w.Write([]byte(err.Error()))
+				w.Write([]byte("500 - Internal Server Error"))
 				return
 			}
 
-			// Validate the request against the OpenAPI spec
-			err = openapi3filter.ValidateRequest(
-				context.Background(),
-				&openapi3filter.RequestValidationInput{
-					Request:    r,
-					PathParams: pathParams,
-					Route:      route,
-				},
-			)
+			// Validate the request against the OpenAPI spec.
+			// We'll also need the requestValidationInput again later when validating the response.
+			requestValidationInput := &openapi3filter.RequestValidationInput{
+				Request:    r,
+				PathParams: pathParams,
+				Route:      route,
+			}
+			err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 			if err != nil {
 				w.WriteHeader(400)
 				w.Write([]byte("400 - Bad Request: " + err.Error()))
@@ -72,14 +72,30 @@ func GetFiretailMiddleware(appSpecPath string) (func(next http.Handler) http.Han
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 
 			// Create custom responseWriter so we can extract the response body written further down the chain
-			responseWriter := &customResponseWriter{w, 0, nil}
+			responseWriter := &draftResponseWriter{w, 0, nil}
 
 			// Serve the next handler down the chain & take note of the execution time
 			startTime := time.Now()
 			next.ServeHTTP(responseWriter, r)
 			executionTime := time.Since(startTime)
 
-			// TODO: validate the response against the openapi spec
+			// Validate the response against the openapi spec
+			responseValidationInput := &openapi3filter.ResponseValidationInput{
+				RequestValidationInput: requestValidationInput,
+				Status:                 responseWriter.statusCode,
+				Header:                 responseWriter.Header(),
+			}
+			responseValidationInput.SetBodyBytes(requestBody)
+			err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
+			if err != nil {
+				log.Println("Err in response body: ", err.Error())
+				w.WriteHeader(500)
+				w.Write([]byte("500 - Internal Server Error"))
+				return
+			}
+
+			// If the response passed the validation, we can now publish it
+			responseWriter.Publish()
 
 			// Create our payload to send to the firetail logging endpoint
 			logPayload := LogEntry{
