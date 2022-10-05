@@ -48,7 +48,6 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Read in the request body so we can log it later & replace r.Body with a new copy for the next http.Handler to read from
 			requestBody, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				log.Println("Error reading in request body, err:", err.Error())
 				w.WriteHeader(500)
 				w.Write([]byte("500 - Internal Server Error"))
 				return
