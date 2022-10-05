@@ -1,6 +1,6 @@
 # Firetail OpenAPIv3 Prototype
 
-This prototype currently has a single `/health` endpoint, implemented as described by the OpenAPIv3 [app-spec.yaml](./app-spec.yaml).
+This is an example of a simple web server implemented using the `net/http` package, with a single `/health` endpoint as described by the included OpenAPIv3 [app-spec.yaml](./app-spec.yaml).
 
 
 
@@ -10,9 +10,9 @@ This prototype currently has a single `/health` endpoint, implemented as describ
 
 ```bash
 git clone git@github.com:FireTail-io/firetail-go-lib.git
-cd firetail-go-lib/examples/openapi3
-go build -o openapi3-example
-./openapi3-example
+cd firetail-go-lib/examples/http
+go build -o http-example
+./http-example
 ```
 
 Curl it!
