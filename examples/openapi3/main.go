@@ -23,7 +23,9 @@ func health(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// Get a firetail middleware
-	firetailMiddleware, err := firetail.GetMiddleware("app-spec.yaml")
+	firetailMiddleware, err := firetail.GetMiddleware(&firetail.MiddlewareOptions{
+		SpecPath: "app-spec.yaml",
+	})
 	if err != nil {
 		panic(err)
 	}

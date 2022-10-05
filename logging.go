@@ -1,107 +1,67 @@
-// This file was generated from JSON Schema using quicktype, do not modify it directly.
-// To parse and unparse this JSON data, add this code to your project and do:
-//
-//    logEntry, err := UnmarshalLogEntry(bytes)
-//    bytes, err = logEntry.Marshal()
-
 package firetail
 
-import "encoding/json"
-
-func UnmarshalLogEntry(data []byte) (LogEntry, error) {
-	var r LogEntry
-	err := json.Unmarshal(data, &r)
-	return r, err
-}
-
-func (r *LogEntry) Marshal() ([]byte, error) {
-	return json.Marshal(r)
-}
-
-// All the information required to make a logging entry in Firetail
-type LogEntry struct {
-	DateCreated   int64    `json:"dateCreated"`   // The time the request was logged in UNIX milliseconds
-	ExecutionTime float64  `json:"executionTime"` // The time elapsed during the execution required to respond to the request, in milliseconds
-	Request       Request  `json:"request"`
-	Response      Response `json:"response"`
-	Version       Version  `json:"version"` // The version of the firetail logging schema used
-}
-
-type Request struct {
-	Body         string              `json:"body"`         // The request body, stringified
-	Headers      map[string][]string `json:"headers"`      // The request headers
-	HTTPProtocol HTTPProtocol        `json:"httpProtocol"` // The HTTP protocol used in the request
-	IP           string              `json:"ip"`           // The source IP of the request
-	Method       Method              `json:"method"`       // The request method. Src for allowed values can be found here: <a; href='https://www.iana.org/assignments/http-methods/http-methods.xhtml#methods'>https://www.iana.org/assignments/http-methods/http-methods.xhtml#methods</a>.
-	URI          string              `json:"uri"`          // The URI the request was made to
-}
-
-type Response struct {
-	Body       string              `json:"body"`    // The response body, stringified
-	Headers    map[string][]string `json:"headers"` // The response headers
-	StatusCode int64               `json:"statusCode"`
-}
-
-// The HTTP protocol used in the request
-type HTTPProtocol string
-
-const (
-	HTTP10 HTTPProtocol = "HTTP/1.0"
-	HTTP11 HTTPProtocol = "HTTP/1.1"
-	HTTP2  HTTPProtocol = "HTTP/2"
-	HTTP3  HTTPProtocol = "HTTP/3"
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"strings"
+	"time"
 )
 
-// The request method. Src for allowed values can be found here: <a
-// href='https://www.iana.org/assignments/http-methods/http-methods.xhtml#methods'>https://www.iana.org/assignments/http-methods/http-methods.xhtml#methods</a>.
-type Method string
+// WIP
+// type Logger struct {
+// 	queue        chan *LogEntry // A channel down which LogEntrys will be queued to be sent
+// 	queueSize    *int64         // The number of log entries in the queue
+// 	endpoint     string         // The endpoint to which logs will be sent in batches
+// 	maxBatchSize int            // The maximum size of a batch
+// 	maxLogAge    time.Duration  // The maximum age of a log item to hold onto
+// }
 
-const (
-	ACL               Method = "ACL"
-	BaselineControl   Method = "BASELINE-CONTROL"
-	Bind              Method = "BIND"
-	Checkin           Method = "CHECKIN"
-	Checkout          Method = "CHECKOUT"
-	Connect           Method = "CONNECT"
-	Copy              Method = "COPY"
-	Delete            Method = "DELETE"
-	Empty             Method = "*"
-	Get               Method = "GET"
-	Head              Method = "HEAD"
-	Label             Method = "LABEL"
-	Link              Method = "LINK"
-	Lock              Method = "LOCK"
-	Merge             Method = "MERGE"
-	Mkactivity        Method = "MKACTIVITY"
-	Mkcalendar        Method = "MKCALENDAR"
-	Mkcol             Method = "MKCOL"
-	Mkredirectref     Method = "MKREDIRECTREF"
-	Mkworkspace       Method = "MKWORKSPACE"
-	Move              Method = "MOVE"
-	Options           Method = "OPTIONS"
-	Orderpatch        Method = "ORDERPATCH"
-	Patch             Method = "PATCH"
-	Post              Method = "POST"
-	Pri               Method = "PRI"
-	Propfind          Method = "PROPFIND"
-	Proppatch         Method = "PROPPATCH"
-	Put               Method = "PUT"
-	Rebind            Method = "REBIND"
-	Report            Method = "REPORT"
-	Search            Method = "SEARCH"
-	Trace             Method = "TRACE"
-	Unbind            Method = "UNBIND"
-	Uncheckout        Method = "UNCHECKOUT"
-	Unlink            Method = "UNLINK"
-	Unlock            Method = "UNLOCK"
-	Update            Method = "UPDATE"
-	Updateredirectref Method = "UPDATEREDIRECTREF"
-	VersionControl    Method = "VERSION-CONTROL"
-)
+// func (l *Logger) enqueue(logEntry *LogEntry) {
+// 	l.queue <- logEntry
+// 	atomic.AddInt64(l.queueSize, 1)
+// }
 
-// The version of the firetail logging schema used
-type Version string
+// TODO: refactor
+func logRequest(r *http.Request, responseWriter *draftResponseWriter, requestBody []byte, executionTime time.Duration, options *MiddlewareOptions) {
+	// Create our payload to send to the firetail logging endpoint
+	logPayload := LogEntry{
+		Version:       The100Alpha,
+		DateCreated:   time.Now().UnixMilli(),
+		ExecutionTime: float64(executionTime.Milliseconds()),
+		Request: Request{
+			HTTPProtocol: HTTPProtocol(r.Proto),
+			URI:          "", // We'll fill this in later.
+			Headers:      r.Header,
+			Method:       Method(r.Method),
+			Body:         string(requestBody),
+			IP:           "", // We'll fill this in later.
+		},
+		Response: Response{
+			StatusCode: int64(responseWriter.statusCode),
+			Body:       string(responseWriter.responseBody),
+			Headers:    responseWriter.Header(),
+		},
+	}
+	if r.TLS != nil {
+		logPayload.Request.URI = "https://" + r.Host + r.URL.RequestURI()
+	} else {
+		logPayload.Request.URI = "http://" + r.Host + r.URL.RequestURI()
+	}
+	if options.SourceIPCallback != nil {
+		logPayload.Request.IP = options.SourceIPCallback(r)
+	} else {
+		logPayload.Request.IP = strings.Split(r.RemoteAddr, ":")[0]
+	}
 
-const (
-	The100Alpha Version = "1.0.0-alpha"
-)
+	// Marshall the payload to bytes. Using MarshalIndent for now as we're just logging it & it makes it easier to read.
+	// TODO: revert to json.Marshal when actually sending to Firetail endpoint
+	reqBytes, err := json.MarshalIndent(logPayload, "", "	")
+	if err != nil {
+		log.Println("Err marshalling requestPayload to bytes, err:", err.Error())
+		return
+	}
+
+	// TODO: queue to be sent to logging endpoint.
+	log.Println("Request body to be sent to Firetail logging endpoint:", string(reqBytes))
+}
