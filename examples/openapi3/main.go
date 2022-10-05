@@ -22,8 +22,15 @@ func health(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// We can setup our handler as usual, just wrap the firetail middleware around it :)
-	healthHandler := firetail.Middleware(http.HandlerFunc(health))
+	// Get a firetail middleware
+	firetailMiddleware, err := firetail.GetFiretailMiddleware("app-spec.yaml")
+	if err != nil {
+		panic(err)
+	}
+
+	// We can setup our handler as usual, just wrap it in the firetailMiddleware :)
+	healthHandler := firetailMiddleware(http.HandlerFunc(health))
 	http.Handle("/", healthHandler)
+
 	http.ListenAndServe(":8080", nil)
 }
