@@ -88,7 +88,7 @@ func GetFiretailMiddleware(appSpecPath string) (func(next http.Handler) http.Han
 				ExecutionTime: float64(executionTime.Milliseconds()),
 				Request: Request{
 					HTTPProtocol: HTTPProtocol(r.Proto),
-					URI:          r.Host + r.URL.Path + "?" + r.URL.RawQuery,
+					URI:          "", // We fill this in later.
 					Headers:      r.Header,
 					Method:       Method(r.Method),
 					Body:         string(requestBody),
@@ -99,6 +99,11 @@ func GetFiretailMiddleware(appSpecPath string) (func(next http.Handler) http.Han
 					Body:       string(responseWriter.responseBody),
 					Headers:    responseWriter.Header(),
 				},
+			}
+			if r.TLS != nil {
+				logPayload.Request.URI = "https://" + r.Host + r.URL.RequestURI()
+			} else {
+				logPayload.Request.URI = "http://" + r.Host + r.URL.RequestURI()
 			}
 
 			// Marshall the payload to bytes. Using MarshalIndent for now as we're just logging it & it makes it easier to read.
