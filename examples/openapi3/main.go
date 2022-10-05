@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -9,9 +8,6 @@ import (
 )
 
 func health(w http.ResponseWriter, r *http.Request) {
-	res := "I'm Healthy, and I take some time!"
-	log.Println(res)
-
 	// Firetail will log the execution time, let's pretend this endpoint takes about 50ms...
 	time.Sleep(50 * time.Millisecond)
 
@@ -22,11 +18,12 @@ func health(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/html")
 
 	// And, finally, it'll also log the response body...
-	w.Write([]byte(res))
+	w.Write([]byte("I'm Healthy, and I take some time!"))
 }
 
 func main() {
-	healthHandler := http.HandlerFunc(health)
-	http.Handle("/", firetail.Middleware(healthHandler))
+	// We can setup our handler as usual, just wrap the firetail middleware around it :)
+	healthHandler := firetail.Middleware(http.HandlerFunc(health))
+	http.Handle("/", healthHandler)
 	http.ListenAndServe(":8080", nil)
 }
