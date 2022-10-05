@@ -18,7 +18,7 @@ import (
 )
 
 // GetFiretailMiddleware creates & returns a firetail middleware which will use the openapi3 spec found at `appSpecPath`.
-func GetFiretailMiddleware(appSpecPath string) (func(next http.Handler) http.Handler, error) {
+func GetMiddleware(appSpecPath string) (func(next http.Handler) http.Handler, error) {
 	// Load in our appspec, validate it & create a router from it.
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
 	doc, err := loader.LoadFromFile(appSpecPath)
