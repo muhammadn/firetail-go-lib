@@ -18,7 +18,7 @@ func health(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/plain")
 
 	// And, finally, it'll also log the response body...
-	w.Write([]byte("I'm Healthy, and I take some time!"))
+	w.Write([]byte("I'm Healthy!"))
 }
 
 func main() {
