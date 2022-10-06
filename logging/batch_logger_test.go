@@ -114,3 +114,57 @@ func TestBatchesDoNotExceedMaxSize(t *testing.T) {
 	// There should also be no batches left
 	assert.Equal(t, 0, len(batchChannel))
 }
+
+func TestOldLogTriggersBatch(t *testing.T) {
+	const ExpectedLogEntryCount = 10
+	const MaxLogAge = time.Minute
+
+	batchChannel := make(chan *[][]byte, 2)
+	SetupLogger(batchChannel, 1024*512, MaxLogAge)
+
+	// Create ExpectedLogEntryCount-1 test log entries (the last one will trigger a batch)
+	testLogEntries := []*LogEntry{}
+	for i := 0; i < ExpectedLogEntryCount-1; i++ {
+		testLogEntries = append(
+			testLogEntries,
+			&LogEntry{
+				DateCreated: time.Now().UnixMilli(),
+			},
+		)
+	}
+
+	// Enqueue the first group of test entries (all younger than MaxLogAge)
+	for _, logEntry := range testLogEntries {
+		batchLogger.Enqueue(logEntry)
+	}
+
+	// Assert that there's no batches ready yet
+	assert.Equal(t, 0, len(batchChannel))
+
+	// Create a test log entry that's older than MaxLogAge & enqueue it
+	oldLogEntry := &LogEntry{
+		DateCreated: time.Now().UnixMilli() - MaxLogAge.Milliseconds()*2,
+	}
+	testLogEntries = append(testLogEntries, oldLogEntry)
+	batchLogger.Enqueue(oldLogEntry)
+
+	// There should then be a batch in the channel for us to receive
+	batch := <-batchChannel
+
+	// The batch channel should now be empty, as it should only have had one batch in it
+	assert.Equal(t, 0, len(batchChannel))
+
+	// Assert that the batch had the correct number of log entries in it
+	require.Equal(t, ExpectedLogEntryCount, len(*batch))
+
+	// Create the expected batch from our test log entries
+	expectedBatch := [][]byte{}
+	for _, logEntry := range testLogEntries {
+		logEntryBytes, err := json.Marshal(logEntry)
+		require.Nil(t, err)
+		expectedBatch = append(expectedBatch, logEntryBytes)
+	}
+
+	// Assert that the batch has all the same byte slices as the expected batch
+	require.ElementsMatch(t, expectedBatch, *batch)
+}
