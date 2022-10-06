@@ -45,9 +45,23 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 	middleware := func(next http.Handler) http.Handler {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Check there's a corresponding route for this request
+			route, pathParams, err := router.FindRoute(r)
+			if err == routers.ErrPathNotFound {
+				w.WriteHeader(404)
+				w.Write([]byte("404 - Not Found"))
+				return
+			} else if err != nil {
+				log.Println(err.Error())
+				w.WriteHeader(500)
+				w.Write([]byte("500 - Internal Server Error"))
+				return
+			}
+
 			// Read in the request body so we can log it later & replace r.Body with a new copy for the next http.Handler to read from
 			requestBody, err := ioutil.ReadAll(r.Body)
 			if err != nil {
+				log.Println(err.Error())
 				w.WriteHeader(500)
 				w.Write([]byte("500 - Internal Server Error"))
 				return
@@ -61,13 +75,13 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			if options.DisableValidation != nil && *options.DisableValidation {
 				executionTime := handleWithoutValidation(draftResponseWriter, r, next)
 				draftResponseWriter.Publish()
-				logEntry := createLogEntry(r, draftResponseWriter, requestBody, executionTime, options.SourceIPCallback)
+				logEntry := createLogEntry(r, draftResponseWriter, requestBody, route.Path, executionTime, options.SourceIPCallback)
 				// TODO: queue to be sent to logging endpoint. Prettyprinting here for now.
 				prettyprintLogEntry(logEntry)
 			}
 
 			// If the request validation hasn't been disabled, then we handle the request with validation
-			executionTime, err := handleWithValidation(draftResponseWriter, r, next, router)
+			executionTime, err := handleWithValidation(draftResponseWriter, r, next, route, pathParams)
 
 			// Depending upon the err we get, we may need to override the response with a particular code & body
 			switch err {
@@ -80,6 +94,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				w.Write([]byte("400 - Bad Request"))
 				return
 			case utils.ResponseValidationError:
+				log.Println(err.Error())
 				w.WriteHeader(500)
 				w.Write([]byte("500 - Internal Server Error"))
 				return
@@ -88,6 +103,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				break
 			default:
 				// If we get any other non-nil err we return a generic 500
+				log.Println(err.Error())
 				w.WriteHeader(500)
 				w.Write([]byte("500 - Internal Server Error"))
 				return
@@ -97,7 +113,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			draftResponseWriter.Publish()
 
 			// And, finally, log it :)
-			logEntry := createLogEntry(r, draftResponseWriter, requestBody, executionTime, options.SourceIPCallback)
+			logEntry := createLogEntry(r, draftResponseWriter, requestBody, route.Path, executionTime, options.SourceIPCallback)
 
 			// TODO: queue to be sent to logging endpoint. Prettyprinting here for now.
 			prettyprintLogEntry(logEntry)
@@ -116,22 +132,14 @@ func handleWithoutValidation(w *utils.DraftResponseWriter, r *http.Request, next
 	return time.Since(startTime)
 }
 
-func handleWithValidation(w *utils.DraftResponseWriter, r *http.Request, next http.Handler, router routers.Router) (time.Duration, error) {
-	// Check there's a corresponding route for this request
-	route, pathParams, err := router.FindRoute(r)
-	if err == routers.ErrPathNotFound {
-		return time.Duration(0), err
-	} else if err != nil {
-		return time.Duration(0), err
-	}
-
+func handleWithValidation(w *utils.DraftResponseWriter, r *http.Request, next http.Handler, route *routers.Route, pathParams map[string]string) (time.Duration, error) {
 	// Validate the request against the OpenAPI spec. We'll also need the requestValidationInput again later when validating the response.
 	requestValidationInput := &openapi3filter.RequestValidationInput{
 		Request:    r,
 		PathParams: pathParams,
 		Route:      route,
 	}
-	err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
+	err := openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 	if err != nil {
 		return time.Duration(0), utils.RequestValidationError
 	}
@@ -163,7 +171,7 @@ func handleWithValidation(w *utils.DraftResponseWriter, r *http.Request, next ht
 	return executionTime, nil
 }
 
-func createLogEntry(r *http.Request, w *utils.DraftResponseWriter, requestBody []byte, executionTime time.Duration, sourceIPCallback func(r *http.Request) string) logging.LogEntry {
+func createLogEntry(r *http.Request, w *utils.DraftResponseWriter, requestBody []byte, resourcePath string, executionTime time.Duration, sourceIPCallback func(r *http.Request) string) logging.LogEntry {
 	// Create our payload to send to the firetail logging endpoint
 	logEntry := logging.LogEntry{
 		Version:       logging.The100Alpha,
@@ -176,6 +184,7 @@ func createLogEntry(r *http.Request, w *utils.DraftResponseWriter, requestBody [
 			Method:       logging.Method(r.Method),
 			Body:         string(requestBody),
 			IP:           "", // We'll fill this in later.
+			Resource:     resourcePath,
 		},
 		Response: logging.Response{
 			StatusCode: int64(w.StatusCode),

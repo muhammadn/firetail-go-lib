@@ -34,6 +34,7 @@ type Request struct {
 	IP           string              `json:"ip"`           // The source IP of the request
 	Method       Method              `json:"method"`       // The request method. Src for allowed values can be found here: <a; href='https://www.iana.org/assignments/http-methods/http-methods.xhtml#methods'>https://www.iana.org/assignments/http-methods/http-methods.xhtml#methods</a>.
 	URI          string              `json:"uri"`          // The URI the request was made to
+	Resource     string              `json:"resource"`     // The resource path that the request matched up to in the OpenAPI spec
 }
 
 type Response struct {
