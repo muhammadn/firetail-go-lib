@@ -11,23 +11,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var batchLogger *BatchLogger
-
-func SetupLogger(batchChannel chan *[][]byte, maxBatchSize int, maxLogAge time.Duration) {
-	batchLogger = NewBatchLogger(maxBatchSize, maxLogAge, "")
+func SetupLogger(batchChannel chan *[][]byte, maxBatchSize int, maxLogAge time.Duration) *batchLogger {
+	batchLogger := NewBatchLogger(maxBatchSize, maxLogAge, "")
 
 	// Replace the batchHandler with a custom one to throw the batches into a queue that we can receive from for testing
 	batchLogger.batchHandler = func(b [][]byte) error {
 		batchChannel <- &b
 		return nil
 	}
+
+	return batchLogger
 }
 
 func TestOldLogIsSentImmediately(t *testing.T) {
 	const MaxLogAge = time.Minute
 
 	batchChannel := make(chan *[][]byte, 2)
-	SetupLogger(batchChannel, 1024*512, MaxLogAge)
+	batchLogger := SetupLogger(batchChannel, 1024*512, MaxLogAge)
 
 	// Create a test log entry & enqueue it
 	testLogEntry := LogEntry{
@@ -56,7 +56,7 @@ func TestBatchesDoNotExceedMaxSize(t *testing.T) {
 
 	// Buffer our batchChannel with TestLogEntryCount spaces (worst case, each entry ends up in its own batch)
 	batchChannel := make(chan *[][]byte, TestLogEntryCount)
-	SetupLogger(batchChannel, MaxBatchSize, time.Second)
+	batchLogger := SetupLogger(batchChannel, MaxBatchSize, time.Second)
 
 	// Create a bunch of test entries
 	testLogEntries := []*LogEntry{}
@@ -122,7 +122,7 @@ func TestOldLogTriggersBatch(t *testing.T) {
 	const MaxLogAge = time.Minute
 
 	batchChannel := make(chan *[][]byte, 2)
-	SetupLogger(batchChannel, 1024*512, MaxLogAge)
+	batchLogger := SetupLogger(batchChannel, 1024*512, MaxLogAge)
 
 	// Create ExpectedLogEntryCount-1 test log entries (the last one will trigger a batch)
 	testLogEntries := []*LogEntry{}
