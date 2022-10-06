@@ -104,6 +104,7 @@ func TestBatchesDoNotExceedMaxSize(t *testing.T) {
 			batchSize += len(logBytes)
 		}
 
+		// No batch should ever be bigger than the MaxBatchSize
 		assert.GreaterOrEqual(t, MaxBatchSize, batchSize)
 	}
 
