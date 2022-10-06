@@ -25,7 +25,7 @@ func SetupLogger(batchChannel chan *[][]byte, maxBatchSize int, maxLogAge time.D
 
 func TestOldLogIsSentImmediately(t *testing.T) {
 	batchChannel := make(chan *[][]byte, 2)
-	SetupLogger(batchChannel, 1024^3, time.Minute)
+	SetupLogger(batchChannel, 1024*512, time.Minute)
 
 	// Create a test log entry & enqueue it
 	testLogEntry := LogEntry{
