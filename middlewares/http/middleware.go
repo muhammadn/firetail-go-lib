@@ -24,6 +24,7 @@ type Options struct {
 	SpecPath          string                       // Path at which an openapi spec can be found
 	SourceIPCallback  func(r *http.Request) string // An optional callback which takes the http.Request and returns the source IP of the request as a string.
 	DisableValidation *bool                        // An optional flag to disable request & response validation; validation is enabled by default
+	FiretailEndpoint  string                       // The Firetail logging endpoint request data should be sent to
 }
 
 // GetMiddleware creates & returns a firetail middleware. Errs if the openapi spec can't be found, validated, or loaded into a gorillamux router.
@@ -42,6 +43,9 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	if err != nil {
 		return nil, err
 	}
+
+	// Create a batchLogger to pass all our log entries to
+	batchLogger := logging.NewBatchLogger(1024*512, time.Second, options.FiretailEndpoint)
 
 	middleware := func(next http.Handler) http.Handler {
 		// TODO: refactor to ALWAYS send a log to Firetail - even when validation fails?
@@ -77,8 +81,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				executionTime := handleWithoutValidation(draftResponseWriter, r, next)
 				draftResponseWriter.Publish()
 				logEntry := createLogEntry(r, draftResponseWriter, requestBody, route.Path, executionTime, options.SourceIPCallback)
-				// TODO: queue to be sent to logging endpoint. Prettyprinting here for now.
-				prettyprintLogEntry(logEntry)
+				batchLogger.Enqueue(&logEntry)
 				return
 			}
 
@@ -116,9 +119,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 			// And, finally, log it :)
 			logEntry := createLogEntry(r, draftResponseWriter, requestBody, route.Path, executionTime, options.SourceIPCallback)
-
-			// TODO: queue to be sent to logging endpoint. Prettyprinting here for now.
-			prettyprintLogEntry(logEntry)
+			batchLogger.Enqueue(&logEntry)
 		})
 
 		return handler
