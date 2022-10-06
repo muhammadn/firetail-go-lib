@@ -19,14 +19,14 @@ import (
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 )
 
-// MiddlewareOptions is an options struct used when creating a Firetail middleware
+// Options is an options struct used when creating a Firetail middleware (GetMiddleware)
 type Options struct {
 	SpecPath          string                       // Path at which an openapi spec can be found
 	SourceIPCallback  func(r *http.Request) string // An optional callback which takes the http.Request and returns the source IP of the request as a string.
 	DisableValidation *bool                        // An optional flag to disable request & response validation; validation is enabled by default
 }
 
-// GetFiretailMiddleware creates & returns a firetail middleware. Errs if the openapi spec can't be found, validated, or loaded into a gorillamux router.
+// GetMiddleware creates & returns a firetail middleware. Errs if the openapi spec can't be found, validated, or loaded into a gorillamux router.
 func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, error) {
 	// Load in our appspec, validate it & create a router from it.
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
@@ -44,6 +44,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	}
 
 	middleware := func(next http.Handler) http.Handler {
+		// TODO: refactor to ALWAYS send a log to Firetail - even when validation fails?
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Check there's a corresponding route for this request
 			route, pathParams, err := router.FindRoute(r)
@@ -68,7 +69,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 
-			// Create custom responseWriter so we can extract the response body written further down the chain for validation & logging later
+			// Create a draftResponseWriter so we can extract the response body written further down the chain for validation & logging later
 			draftResponseWriter := &utils.DraftResponseWriter{ResponseWriter: w, StatusCode: 0, ResponseBody: nil}
 
 			// If validation has been disabled, everything is far simpler...

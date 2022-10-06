@@ -2,7 +2,7 @@ package utils
 
 import "net/http"
 
-// A draftResponseWriter is a responseWriter to which a draft response can be written and later published.
+// A DraftResponseWriter is a responseWriter to which a draft response can be written and later published.
 type DraftResponseWriter struct {
 	http.ResponseWriter
 	StatusCode   int

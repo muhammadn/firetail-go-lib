@@ -8,7 +8,7 @@ import (
 
 // WIP
 type BatchLogger struct {
-	queue        chan *LogEntry       // A channel down which LogEntrys will be queued to be sent as byte slices
+	queue        chan *LogEntry       // A channel down which LogEntrys will be queued to be sent to Firetail
 	maxBatchSize int                  // The maximum size of a batch in bytes
 	maxLogAge    time.Duration        // The maximum age of a log item to hold onto
 	batchHandler func([][]byte) error // A handler that takes a batch of log entries as a slice of slices of bytes & sends them to Firetail
@@ -33,7 +33,7 @@ func NewBatchLogger(maxBatchSize int, maxLogAge time.Duration, loggingEndpoint s
 	return newLogger
 }
 
-// Enqueue enqueues a logentry to be batched & sent to Firetail. Should be invoked as a new goroutine to avoid blocking if l.queue is full.
+// Enqueue enqueues a logentry to be batched & sent to Firetail. Should normally be run in a new goroutine as it blocks until another routine receives from l.queue.
 func (l *BatchLogger) Enqueue(logEntry *LogEntry) {
 	l.queue <- logEntry
 }
