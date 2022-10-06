@@ -31,7 +31,7 @@ func TestOldLogIsSentImmediately(t *testing.T) {
 	testLogEntry := LogEntry{
 		DateCreated: 0,
 	}
-	go batchLogger.Enqueue(&testLogEntry)
+	batchLogger.Enqueue(&testLogEntry)
 
 	// There should then be a batch in the channel for us to receive
 	batch := <-batchChannel
@@ -89,7 +89,7 @@ func TestBatchesDoNotExceedMaxSize(t *testing.T) {
 
 	// Enqueue them all
 	for _, logEntry := range testLogEntries {
-		go batchLogger.Enqueue(logEntry)
+		batchLogger.Enqueue(logEntry)
 	}
 
 	// Keep reading until we've seen all the log entries
