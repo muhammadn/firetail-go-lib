@@ -79,6 +79,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				logEntry := createLogEntry(r, draftResponseWriter, requestBody, route.Path, executionTime, options.SourceIPCallback)
 				// TODO: queue to be sent to logging endpoint. Prettyprinting here for now.
 				prettyprintLogEntry(logEntry)
+				return
 			}
 
 			// If the request validation hasn't been disabled, then we handle the request with validation
