@@ -23,8 +23,7 @@ func NewBatchLogger(maxBatchSize int, maxLogAge time.Duration, loggingEndpoint s
 
 	newLogger.batchHandler = func(b [][]byte) error {
 		// TODO: send to Firetail. If there's an err, we should re-queue
-		log.Printf("Sending %d logs to %s...", len(b), loggingEndpoint)
-		log.Println(b)
+		log.Printf("Sending %d log(s) to '%s'...", len(b), loggingEndpoint)
 		return nil
 	}
 
