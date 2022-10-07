@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -28,6 +27,13 @@ type Options struct {
 
 // GetMiddleware creates & returns a firetail middleware. Errs if the openapi spec can't be found, validated, or loaded into a gorillamux router.
 func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, error) {
+	// If the sourceIPCallback is nil, we fill it in with our own default
+	if options.SourceIPCallback == nil {
+		options.SourceIPCallback = func(r *http.Request) string {
+			return strings.Split(r.RemoteAddr, ":")[0]
+		}
+	}
+
 	// Load in our appspec, validate it & create a router from it.
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
 	doc, err := loader.LoadFromFile(options.SpecPath)
@@ -48,81 +54,104 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	batchLogger := logging.NewBatchLogger(1024*512, time.Second, options.FiretailEndpoint)
 
 	middleware := func(next http.Handler) http.Handler {
-		// TODO: refactor to ALWAYS send a log to Firetail - even when validation fails?
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Check there's a corresponding route for this request
-			route, pathParams, err := router.FindRoute(r)
-			if err == routers.ErrPathNotFound {
-				w.WriteHeader(404)
-				w.Write([]byte("404 - Not Found"))
-				return
-			} else if err != nil {
-				log.Println(err.Error())
-				w.WriteHeader(500)
-				w.Write([]byte("500 - Internal Server Error"))
-				return
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Create a LogEntry populated with everything we know right now
+			logEntry := logging.LogEntry{
+				Version:     logging.The100Alpha,
+				DateCreated: time.Now().UnixMilli(),
+				Request: logging.Request{
+					HTTPProtocol: logging.HTTPProtocol(r.Proto),
+					Headers:      r.Header,
+					Method:       logging.Method(r.Method),
+					IP:           options.SourceIPCallback(r),
+				},
+			}
+			if r.TLS != nil {
+				logEntry.Request.URI = "https://" + r.Host + r.URL.RequestURI()
+			} else {
+				logEntry.Request.URI = "http://" + r.Host + r.URL.RequestURI()
 			}
 
-			// Read in the request body so we can log it later & replace r.Body with a new copy for the next http.Handler to read from
+			// Create a draftResponseWriter so we can access the response body, status code etc. for logging & validation later
+			localDraftResponseWriter := &utils.DraftResponseWriter{ResponseWriter: w, StatusCode: 0, ResponseBody: nil}
+
+			// No matter what happens, read the response from the draft response writer, enqueue the log entry & publish the draft
+			defer func() {
+				logEntry.Response = logging.Response{
+					StatusCode: int64(localDraftResponseWriter.StatusCode),
+					Body:       string(localDraftResponseWriter.ResponseBody),
+					Headers:    localDraftResponseWriter.Header(),
+				}
+				batchLogger.Enqueue(&logEntry)
+				localDraftResponseWriter.Publish()
+			}()
+
+			// Read in the request body so we can log it & replace r.Body with a new copy for the next http.Handler to read from
 			requestBody, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				log.Println(err.Error())
-				w.WriteHeader(500)
-				w.Write([]byte("500 - Internal Server Error"))
+				localDraftResponseWriter.WriteHeader(500)
+				localDraftResponseWriter.Write([]byte("500 - Internal Server Error"))
 				return
 			}
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 
-			// Create a draftResponseWriter so we can extract the response body written further down the chain for validation & logging later
-			draftResponseWriter := &utils.DraftResponseWriter{ResponseWriter: w, StatusCode: 0, ResponseBody: nil}
+			// Now we have the request body, we can fill it into our log entry
+			logEntry.Request.Body = string(requestBody)
+
+			// Check there's a corresponding route for this request
+			route, pathParams, err := router.FindRoute(r)
+			if err == routers.ErrPathNotFound {
+				localDraftResponseWriter.WriteHeader(404)
+				localDraftResponseWriter.Write([]byte("404 - Not Found"))
+				return
+			} else if err == routers.ErrMethodNotAllowed {
+				localDraftResponseWriter.WriteHeader(405)
+				localDraftResponseWriter.Write([]byte("405 - Method Not Allowed"))
+				return
+			} else if err != nil {
+				localDraftResponseWriter.WriteHeader(500)
+				localDraftResponseWriter.Write([]byte("500 - Internal Server Error"))
+				return
+			}
+
+			// We now know the resource that was requested, so we can fill it into our log entry
+			logEntry.Request.Resource = route.Path
 
 			// If validation has been disabled, everything is far simpler...
 			if options.DisableValidation != nil && *options.DisableValidation {
-				executionTime := handleWithoutValidation(draftResponseWriter, r, next)
-				draftResponseWriter.Publish()
-				logEntry := createLogEntry(r, draftResponseWriter, requestBody, route.Path, executionTime, options.SourceIPCallback)
-				batchLogger.Enqueue(&logEntry)
+				executionTime := handleWithoutValidation(localDraftResponseWriter, r, next)
+				logEntry.ExecutionTime = float64(executionTime)
 				return
 			}
 
 			// If the request validation hasn't been disabled, then we handle the request with validation
-			executionTime, err := handleWithValidation(draftResponseWriter, r, next, route, pathParams)
+			chainDraftResponseWriter := &utils.DraftResponseWriter{ResponseWriter: localDraftResponseWriter, StatusCode: 0, ResponseBody: nil}
+			executionTime, err := handleWithValidation(chainDraftResponseWriter, r, next, route, pathParams)
+
+			// We now know the execution time, so we can fill it into our log entry
+			logEntry.ExecutionTime = float64(executionTime)
 
 			// Depending upon the err we get, we may need to override the response with a particular code & body
 			switch err {
-			case routers.ErrPathNotFound:
-				w.WriteHeader(404)
-				w.Write([]byte("404 - Not Found"))
-				return
 			case utils.RequestValidationError:
-				w.WriteHeader(400)
-				w.Write([]byte("400 - Bad Request"))
+				localDraftResponseWriter.WriteHeader(400)
+				localDraftResponseWriter.Write([]byte("400 - Bad Request"))
 				return
 			case utils.ResponseValidationError:
-				log.Println(err.Error())
-				w.WriteHeader(500)
-				w.Write([]byte("500 - Internal Server Error"))
+				localDraftResponseWriter.WriteHeader(500)
+				localDraftResponseWriter.Write([]byte("500 - Internal Server Error"))
 				return
 			case nil:
-				// Happy path is nil, so just break
+				// If there's no err, we can publish the response written down the chain to our localDraftResponseWriter
+				chainDraftResponseWriter.Publish()
 				break
 			default:
 				// If we get any other non-nil err we return a generic 500
-				log.Println(err.Error())
-				w.WriteHeader(500)
-				w.Write([]byte("500 - Internal Server Error"))
+				localDraftResponseWriter.WriteHeader(500)
+				localDraftResponseWriter.Write([]byte("500 - Internal Server Error"))
 				return
 			}
-
-			// If the response passed the validation, we can now publish it
-			draftResponseWriter.Publish()
-
-			// And, finally, log it :)
-			logEntry := createLogEntry(r, draftResponseWriter, requestBody, route.Path, executionTime, options.SourceIPCallback)
-			batchLogger.Enqueue(&logEntry)
 		})
-
-		return handler
 	}
 
 	return middleware, nil
@@ -172,39 +201,4 @@ func handleWithValidation(w *utils.DraftResponseWriter, r *http.Request, next ht
 	}
 
 	return executionTime, nil
-}
-
-func createLogEntry(r *http.Request, w *utils.DraftResponseWriter, requestBody []byte, resourcePath string, executionTime time.Duration, sourceIPCallback func(r *http.Request) string) logging.LogEntry {
-	// Create our payload to send to the firetail logging endpoint
-	logEntry := logging.LogEntry{
-		Version:       logging.The100Alpha,
-		DateCreated:   time.Now().UnixMilli(),
-		ExecutionTime: float64(executionTime.Milliseconds()),
-		Request: logging.Request{
-			HTTPProtocol: logging.HTTPProtocol(r.Proto),
-			URI:          "", // We'll fill this in later.
-			Headers:      r.Header,
-			Method:       logging.Method(r.Method),
-			Body:         string(requestBody),
-			IP:           "", // We'll fill this in later.
-			Resource:     resourcePath,
-		},
-		Response: logging.Response{
-			StatusCode: int64(w.StatusCode),
-			Body:       string(w.ResponseBody),
-			Headers:    w.Header(),
-		},
-	}
-	if r.TLS != nil {
-		logEntry.Request.URI = "https://" + r.Host + r.URL.RequestURI()
-	} else {
-		logEntry.Request.URI = "http://" + r.Host + r.URL.RequestURI()
-	}
-	if sourceIPCallback != nil {
-		logEntry.Request.IP = sourceIPCallback(r)
-	} else {
-		logEntry.Request.IP = strings.Split(r.RemoteAddr, ":")[0]
-	}
-
-	return logEntry
 }
