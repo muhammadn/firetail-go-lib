@@ -3,7 +3,6 @@ package firetail
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
@@ -207,14 +206,4 @@ func createLogEntry(r *http.Request, w *utils.DraftResponseWriter, requestBody [
 	}
 
 	return logEntry
-}
-
-// TODO: remove - this is a temp func until log queueing is implemented.
-func prettyprintLogEntry(logEntry logging.LogEntry) {
-	reqBytes, err := json.MarshalIndent(logEntry, "", "	")
-	if err != nil {
-		log.Println("Err marshalling requestPayload to bytes, err:", err.Error())
-		return
-	}
-	log.Println("Request body to be sent to Firetail logging endpoint:", string(reqBytes))
 }
