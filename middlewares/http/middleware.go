@@ -17,14 +17,6 @@ import (
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 )
 
-// Options is an options struct used when creating a Firetail middleware (GetMiddleware)
-type Options struct {
-	SpecPath          string                       // Path at which an openapi spec can be found
-	SourceIPCallback  func(r *http.Request) string // An optional callback which takes the http.Request and returns the source IP of the request as a string.
-	DisableValidation *bool                        // An optional flag to disable request & response validation; validation is enabled by default
-	FiretailEndpoint  string                       // The Firetail logging endpoint request data should be sent to
-}
-
 // GetMiddleware creates & returns a firetail middleware. Errs if the openapi spec can't be found, validated, or loaded into a gorillamux router.
 func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, error) {
 	// If the sourceIPCallback is nil, we fill it in with our own default
