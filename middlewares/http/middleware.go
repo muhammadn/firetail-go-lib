@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/FireTail-io/firetail-go-lib/logging"
@@ -19,11 +18,12 @@ import (
 
 // GetMiddleware creates & returns a firetail middleware. Errs if the openapi spec can't be found, validated, or loaded into a gorillamux router.
 func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, error) {
-	// If the sourceIPCallback is nil, we fill it in with our own default
+	// If sourceIPCallback or ErrHandler are nil, we fill them in with our own defaults
 	if options.SourceIPCallback == nil {
-		options.SourceIPCallback = func(r *http.Request) string {
-			return strings.Split(r.RemoteAddr, ":")[0]
-		}
+		options.SourceIPCallback = defaultSourceIPCallback
+	}
+	if options.ErrHandler == nil {
+		options.ErrHandler = defaultErrHandler
 	}
 
 	// Load in our appspec, validate it & create a router from it.
@@ -81,8 +81,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Read in the request body so we can log it & replace r.Body with a new copy for the next http.Handler to read from
 			requestBody, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				localDraftResponseWriter.WriteHeader(500)
-				localDraftResponseWriter.Write([]byte("500 - Internal Server Error"))
+				options.ErrHandler(err, localDraftResponseWriter)
 				return
 			}
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
@@ -92,17 +91,8 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 			// Check there's a corresponding route for this request
 			route, pathParams, err := router.FindRoute(r)
-			if err == routers.ErrPathNotFound {
-				localDraftResponseWriter.WriteHeader(404)
-				localDraftResponseWriter.Write([]byte("404 - Not Found"))
-				return
-			} else if err == routers.ErrMethodNotAllowed {
-				localDraftResponseWriter.WriteHeader(405)
-				localDraftResponseWriter.Write([]byte("405 - Method Not Allowed"))
-				return
-			} else if err != nil {
-				localDraftResponseWriter.WriteHeader(500)
-				localDraftResponseWriter.Write([]byte("500 - Internal Server Error"))
+			if err != nil {
+				options.ErrHandler(err, localDraftResponseWriter)
 				return
 			}
 
@@ -124,25 +114,13 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			logEntry.ExecutionTime = float64(executionTime)
 
 			// Depending upon the err we get, we may need to override the response with a particular code & body
-			switch err {
-			case utils.RequestValidationError:
-				localDraftResponseWriter.WriteHeader(400)
-				localDraftResponseWriter.Write([]byte("400 - Bad Request"))
-				return
-			case utils.ResponseValidationError:
-				localDraftResponseWriter.WriteHeader(500)
-				localDraftResponseWriter.Write([]byte("500 - Internal Server Error"))
-				return
-			case nil:
-				// If there's no err, we can publish the response written down the chain to our localDraftResponseWriter
-				chainDraftResponseWriter.Publish()
-				break
-			default:
-				// If we get any other non-nil err we return a generic 500
-				localDraftResponseWriter.WriteHeader(500)
-				localDraftResponseWriter.Write([]byte("500 - Internal Server Error"))
+			if err != nil {
+				options.ErrHandler(err, localDraftResponseWriter)
 				return
 			}
+
+			// If there's no err, then we can publish the response written down the chain to our localDraftResponseWriter
+			chainDraftResponseWriter.Publish()
 		})
 	}
 
@@ -165,7 +143,7 @@ func handleWithValidation(w *utils.DraftResponseWriter, r *http.Request, next ht
 	}
 	err := openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 	if err != nil {
-		return time.Duration(0), utils.RequestValidationError
+		return time.Duration(0), utils.ErrRequestValidationFailed
 	}
 
 	// Serve the next handler down the chain & take note of the execution time
@@ -189,7 +167,7 @@ func handleWithValidation(w *utils.DraftResponseWriter, r *http.Request, next ht
 	responseValidationInput.SetBodyBytes(w.ResponseBody)
 	err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
 	if err != nil {
-		return time.Duration(0), utils.ResponseValidationError
+		return time.Duration(0), utils.ErrResponseValidationFailed
 	}
 
 	return executionTime, nil
