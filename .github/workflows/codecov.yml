@@ -5,13 +5,11 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [ '1.18' ]
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
-      - uses: actions/setup-go@v2
-        with:
-          go-version: '1.18' # Min version we support
+      - uses: actions/checkout@v3
       - name: Run coverage
         run: go test ./... -race -coverprofile=coverage.out -covermode=atomic -v
       - name: Upload coverage to Codecov
