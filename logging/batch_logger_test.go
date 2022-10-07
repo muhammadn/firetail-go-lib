@@ -51,7 +51,7 @@ func TestOldLogIsSentImmediately(t *testing.T) {
 }
 
 func TestBatchesDoNotExceedMaxSize(t *testing.T) {
-	const TestLogEntryCount = 10000
+	const TestLogEntryCount = 1000
 	const MaxBatchSize = 1024 * 512 // 512KB in Bytes
 
 	// Buffer our batchChannel with TestLogEntryCount spaces (worst case, each entry ends up in its own batch)
