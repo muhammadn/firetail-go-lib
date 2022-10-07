@@ -62,6 +62,8 @@ func (l *batchLogger) worker() {
 				panic(err)
 			}
 
+			// TODO: handle the edge case of a single entry being too big to fit into a batch alone
+
 			// If it's too big to add to the batch, place it in the overflow, flag the batch is ready to send & break from this case
 			if len(entryBytes)+currentBatchSize > l.maxBatchSize {
 				overflowEntry = newEntry
