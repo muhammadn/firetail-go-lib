@@ -11,8 +11,6 @@ import (
 	"github.com/FireTail-io/firetail-go-lib/logging"
 	"github.com/FireTail-io/firetail-go-lib/utils"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3filter"
-	"github.com/getkin/kin-openapi/routers"
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 )
 
@@ -64,24 +62,24 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				logEntry.Request.URI = "http://" + r.Host + r.URL.RequestURI()
 			}
 
-			// Create a draftResponseWriter so we can access the response body, status code etc. for logging & validation later
-			localDraftResponseWriter := &utils.DraftResponseWriter{ResponseWriter: w, StatusCode: 0, ResponseBody: nil}
+			// Create a Firetail ResponseWriter so we can access the response body, status code etc. for logging & validation later
+			localResponseWriter := &utils.ResponseWriter{ResponseWriter: w, StatusCode: 0, ResponseBody: nil}
 
-			// No matter what happens, read the response from the draft response writer, enqueue the log entry & publish the draft
+			// No matter what happens, read the response from the response writer, enqueue the log entry & publish the response that was written to the ResponseWriter
 			defer func() {
 				logEntry.Response = logging.Response{
-					StatusCode: int64(localDraftResponseWriter.StatusCode),
-					Body:       string(localDraftResponseWriter.ResponseBody),
-					Headers:    localDraftResponseWriter.Header(),
+					StatusCode: int64(localResponseWriter.StatusCode),
+					Body:       string(localResponseWriter.ResponseBody),
+					Headers:    localResponseWriter.Header(),
 				}
 				batchLogger.Enqueue(&logEntry)
-				localDraftResponseWriter.Publish()
+				localResponseWriter.Publish()
 			}()
 
 			// Read in the request body so we can log it & replace r.Body with a new copy for the next http.Handler to read from
 			requestBody, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				options.ErrHandler(err, localDraftResponseWriter)
+				options.ErrHandler(err, localResponseWriter)
 				return
 			}
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
@@ -92,7 +90,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Check there's a corresponding route for this request
 			route, pathParams, err := router.FindRoute(r)
 			if err != nil {
-				options.ErrHandler(err, localDraftResponseWriter)
+				options.ErrHandler(err, localResponseWriter)
 				return
 			}
 
@@ -101,74 +99,28 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 			// If validation has been disabled, everything is far simpler...
 			if options.DisableValidation != nil && *options.DisableValidation {
-				executionTime := handleWithoutValidation(localDraftResponseWriter, r, next)
+				executionTime := handleWithoutValidation(localResponseWriter, r, next)
 				logEntry.ExecutionTime = float64(executionTime)
 				return
 			}
 
 			// If the request validation hasn't been disabled, then we handle the request with validation
-			chainDraftResponseWriter := &utils.DraftResponseWriter{ResponseWriter: localDraftResponseWriter, StatusCode: 0, ResponseBody: nil}
-			executionTime, err := handleWithValidation(chainDraftResponseWriter, r, next, route, pathParams)
+			chainResponseWriter := &utils.ResponseWriter{ResponseWriter: localResponseWriter, StatusCode: 0, ResponseBody: nil}
+			executionTime, err := handleWithValidation(chainResponseWriter, r, next, route, pathParams)
 
 			// We now know the execution time, so we can fill it into our log entry
 			logEntry.ExecutionTime = float64(executionTime)
 
 			// Depending upon the err we get, we may need to override the response with a particular code & body
 			if err != nil {
-				options.ErrHandler(err, localDraftResponseWriter)
+				options.ErrHandler(err, localResponseWriter)
 				return
 			}
 
-			// If there's no err, then we can publish the response written down the chain to our localDraftResponseWriter
-			chainDraftResponseWriter.Publish()
+			// If there's no err, then we can publish the response written down the chain to our localResponseWriter
+			chainResponseWriter.Publish()
 		})
 	}
 
 	return middleware, nil
-}
-
-func handleWithoutValidation(w *utils.DraftResponseWriter, r *http.Request, next http.Handler) time.Duration {
-	// There's no validation to do; we've just got to record the execution time
-	startTime := time.Now()
-	next.ServeHTTP(w, r)
-	return time.Since(startTime)
-}
-
-func handleWithValidation(w *utils.DraftResponseWriter, r *http.Request, next http.Handler, route *routers.Route, pathParams map[string]string) (time.Duration, error) {
-	// Validate the request against the OpenAPI spec. We'll also need the requestValidationInput again later when validating the response.
-	requestValidationInput := &openapi3filter.RequestValidationInput{
-		Request:    r,
-		PathParams: pathParams,
-		Route:      route,
-	}
-	err := openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
-	if err != nil {
-		return time.Duration(0), utils.ErrRequestValidationFailed
-	}
-
-	// Serve the next handler down the chain & take note of the execution time
-	startTime := time.Now()
-	next.ServeHTTP(w, r)
-	executionTime := time.Since(startTime)
-
-	// Validate the response against the openapi spec
-	responseValidationInput := &openapi3filter.ResponseValidationInput{
-		RequestValidationInput: &openapi3filter.RequestValidationInput{
-			Request:    r,
-			PathParams: pathParams,
-			Route:      route,
-		},
-		Status: w.StatusCode,
-		Header: w.Header(),
-		Options: &openapi3filter.Options{
-			IncludeResponseStatus: true,
-		},
-	}
-	responseValidationInput.SetBodyBytes(w.ResponseBody)
-	err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
-	if err != nil {
-		return time.Duration(0), utils.ErrResponseValidationFailed
-	}
-
-	return executionTime, nil
 }
