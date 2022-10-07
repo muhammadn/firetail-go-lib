@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// WIP
+// A batchLogger receives log entries via its Enqueue method & arranges them into batches that it then passes to its batchHandler
 type batchLogger struct {
 	queue        chan *LogEntry       // A channel down which LogEntrys will be queued to be sent to Firetail
 	maxBatchSize int                  // The maximum size of a batch in bytes
@@ -14,6 +14,7 @@ type batchLogger struct {
 	batchHandler func([][]byte) error // A handler that takes a batch of log entries as a slice of slices of bytes & sends them to Firetail
 }
 
+// NewBatchLogger creates a new batchLogger with the provided maxBatchSize and maxLogAge, and a batchHandler which will send batches to the provided loggingEndpoint
 func NewBatchLogger(maxBatchSize int, maxLogAge time.Duration, loggingEndpoint string) *batchLogger {
 	newLogger := &batchLogger{
 		queue:        make(chan *LogEntry),
@@ -40,6 +41,9 @@ func (l *batchLogger) Enqueue(logEntry *LogEntry) {
 	l.queue <- logEntry
 }
 
+// worker receives log entries via the batchLogger's queue and arranges them into batches of up to the batchLogger's maxBatchSize, and passes them to the logger's
+// batchHandler when either (1) it receives a new log entry that would make the batch oversized, or (2) the oldest log entry in the current batch is older than
+// the batchLogger's maxLogAge
 func (l *batchLogger) worker() {
 	currentBatch := [][]byte{}
 	currentBatchSize := 0
