@@ -48,6 +48,7 @@ func (l *batchLogger) worker() {
 	currentBatch := [][]byte{}
 	currentBatchSize := 0
 	var overflowEntry *LogEntry
+	var overflowEntryBytes *[]byte
 	var oldestEntryCreatedAt *time.Time
 
 	for {
@@ -62,11 +63,15 @@ func (l *batchLogger) worker() {
 				panic(err)
 			}
 
-			// TODO: handle the edge case of a single entry being too big to fit into a batch alone
+			if len(entryBytes) > l.maxBatchSize {
+				// TODO: panic?
+				continue
+			}
 
 			// If it's too big to add to the batch, place it in the overflow, flag the batch is ready to send & break from this case
 			if len(entryBytes)+currentBatchSize > l.maxBatchSize {
 				overflowEntry = newEntry
+				overflowEntryBytes = &entryBytes
 				batchIsReady = true
 				break
 			}
@@ -101,15 +106,14 @@ func (l *batchLogger) worker() {
 
 			// If there's an overflow entry, add it to the batch immediately
 			if overflowEntry != nil {
-				overflowEntryBytes, err := json.Marshal(overflowEntry)
-				if err != nil {
-					panic(err)
-				}
 				createdAt := time.UnixMilli(overflowEntry.DateCreated)
 				oldestEntryCreatedAt = &createdAt
-				currentBatch = append(currentBatch, overflowEntryBytes)
-				currentBatchSize += len(overflowEntryBytes)
+
+				currentBatch = append(currentBatch, *overflowEntryBytes)
+				currentBatchSize += len(*overflowEntryBytes)
+
 				overflowEntry = nil
+				overflowEntryBytes = nil
 			}
 		}
 	}
