@@ -72,7 +72,7 @@ func (o *Options) setDefaults() {
 				break
 			case utils.ErrRequestValidationFailed:
 				w.WriteHeader(400)
-				w.Write([]byte("400 - Method Not Allowed"))
+				w.Write([]byte("400 - Bad Request"))
 				break
 			case utils.ErrResponseValidationFailed:
 				w.WriteHeader(500)
