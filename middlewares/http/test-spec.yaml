@@ -1,0 +1,15 @@
+openapi: 3.0.1
+info:
+  title: Test Spec
+  version: '0.1'
+paths:
+  /health:
+    get:
+      responses:
+        '200':
+          description: Status of the server
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum: ["I'm Healthy! :)"]
