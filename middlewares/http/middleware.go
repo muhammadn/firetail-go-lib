@@ -45,7 +45,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				DateCreated: time.Now().UnixMilli(),
 				Request: logging.Request{
 					HTTPProtocol: logging.HTTPProtocol(r.Proto),
-					Headers:      r.Header,
+					Headers:      utils.MaskHeaders(r.Header, *options.RequestHeadersMask, options.RequestHeadersMaskStrict),
 					Method:       logging.Method(r.Method),
 					IP:           options.SourceIPCallback(r),
 				},
@@ -64,7 +64,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				logEntry.Response = logging.Response{
 					StatusCode: int64(localResponseWriter.StatusCode),
 					Body:       string(localResponseWriter.ResponseBody),
-					Headers:    localResponseWriter.Header(),
+					Headers:    utils.MaskHeaders(localResponseWriter.Header(), *options.ResponseHeadersMask, options.ResponseHeadersMaskStrict),
 				}
 				batchLogger.Enqueue(&logEntry)
 				localResponseWriter.Publish()
