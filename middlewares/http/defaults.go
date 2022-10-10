@@ -36,3 +36,13 @@ func defaultErrHandler(err error, w *utils.ResponseWriter) {
 		break
 	}
 }
+
+// TODO
+func getDefaultRequestHeadersMask() *map[string]utils.HeaderMask {
+	return &map[string]utils.HeaderMask{}
+}
+
+// TODO
+func getDefaultResponseHeadersMask() *map[string]utils.HeaderMask {
+	return &map[string]utils.HeaderMask{}
+}

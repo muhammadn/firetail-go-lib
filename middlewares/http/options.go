@@ -39,3 +39,18 @@ type Options struct {
 	// FiretailEndpoint is the Firetail logging endpoint request data should be sent to
 	FiretailEndpoint string
 }
+
+func (o *Options) setDefaults() {
+	if o.SourceIPCallback == nil {
+		o.SourceIPCallback = defaultSourceIPCallback
+	}
+	if o.ErrHandler == nil {
+		o.ErrHandler = defaultErrHandler
+	}
+	if o.RequestHeadersMask == nil {
+		o.RequestHeadersMask = getDefaultResponseHeadersMask()
+	}
+	if o.ResponseHeadersMask == nil {
+		o.RequestHeadersMask = getDefaultResponseHeadersMask()
+	}
+}

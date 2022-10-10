@@ -16,13 +16,7 @@ import (
 
 // GetMiddleware creates & returns a firetail middleware. Errs if the openapi spec can't be found, validated, or loaded into a gorillamux router.
 func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, error) {
-	// If sourceIPCallback or ErrHandler are nil, we fill them in with our own defaults
-	if options.SourceIPCallback == nil {
-		options.SourceIPCallback = defaultSourceIPCallback
-	}
-	if options.ErrHandler == nil {
-		options.ErrHandler = defaultErrHandler
-	}
+	options.setDefaults() // Fill in any defaults where apropriate
 
 	// Load in our appspec, validate it & create a router from it.
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
