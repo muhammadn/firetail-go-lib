@@ -98,7 +98,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			logEntry.Request.Resource = route.Path
 
 			// If validation has been disabled, everything is far simpler...
-			if options.DisableValidation != nil && *options.DisableValidation {
+			if options.DisableValidation {
 				executionTime := handleWithoutValidation(localResponseWriter, r, next)
 				logEntry.ExecutionTime = float64(executionTime)
 				return

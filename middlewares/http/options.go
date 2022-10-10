@@ -21,20 +21,20 @@ type Options struct {
 	// openapi spec, to be consistent with the format in which the rest of your application returns error responses
 	ErrHandler func(error, *utils.ResponseWriter)
 
-	// DisableValidation is an optional flag which, if set to true, disables request & response validation; validation is enabled by default
-	DisableValidation *bool
+	// DisableValidation is an optional flag which, if set to true, disables request & response validation
+	DisableValidation bool
 
 	// RequestHeadersMask is a map of header names to HeaderMask values, which can be used to control the request headers reported to Firetail
 	RequestHeadersMask *map[string]utils.HeaderMask
 
 	// RequestHeadersMaskStrict is an optional flag which, if set to true, will configure the Firetail middleware to only report request headers explicitly described in the RequestHeadersMask
-	RequestHeadersMaskStrict *bool
+	RequestHeadersMaskStrict bool
 
 	// ResponseHeadersMask is a map of header names to HeaderMask values, which can be used to control the response headers reported to Firetail
 	ResponseHeadersMask *map[string]utils.HeaderMask
 
 	// ResponseHeadersMaskStrict is an optional flag which, if set to true, will configure the Firetail middleware to only report response headers explicitly described in the ResponseHeadersMask
-	ResponseHeadersMaskStrict *bool
+	ResponseHeadersMaskStrict bool
 
 	// FiretailEndpoint is the Firetail logging endpoint request data should be sent to
 	FiretailEndpoint string
