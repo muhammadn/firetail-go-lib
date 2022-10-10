@@ -106,6 +106,6 @@ func (o *Options) setDefaults() {
 
 	if o.ResponseHeadersMask == nil {
 		// TODO: create default
-		o.RequestHeadersMask = &map[string]headers.HeaderMask{}
+		o.ResponseHeadersMask = &map[string]headers.HeaderMask{}
 	}
 }
