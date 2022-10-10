@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/FireTail-io/firetail-go-lib/headers"
 	"github.com/FireTail-io/firetail-go-lib/utils"
 )
 
@@ -38,11 +39,11 @@ func defaultErrHandler(err error, w *utils.ResponseWriter) {
 }
 
 // TODO
-func getDefaultRequestHeadersMask() *map[string]utils.HeaderMask {
-	return &map[string]utils.HeaderMask{}
+func getDefaultRequestHeadersMask() *map[string]headers.HeaderMask {
+	return &map[string]headers.HeaderMask{}
 }
 
 // TODO
-func getDefaultResponseHeadersMask() *map[string]utils.HeaderMask {
-	return &map[string]utils.HeaderMask{}
+func getDefaultResponseHeadersMask() *map[string]headers.HeaderMask {
+	return &map[string]headers.HeaderMask{}
 }

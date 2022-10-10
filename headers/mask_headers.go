@@ -1,4 +1,4 @@
-package utils
+package headers
 
 import (
 	"crypto"
@@ -9,7 +9,7 @@ type HeaderMask int
 
 const (
 	// If the mask is being applied strictly, then the header will be removed, otherwise it will be preserved
-	Unset HeaderMask = iota
+	UnsetHeader HeaderMask = iota
 
 	// The header will be preserved and logged to FireTail as received
 	PreserveHeader
@@ -27,7 +27,7 @@ const (
 	HashHeader
 )
 
-func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]HeaderMask, isStrict bool) map[string][]string {
+func Mask(unmaskedHeaders map[string][]string, headersMask map[string]HeaderMask, isStrict bool) map[string][]string {
 	maskedHeaders := map[string][]string{}
 
 	headerNameHashFails := 0
@@ -35,7 +35,7 @@ func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]Hea
 		mask := headersMask[headerName]
 
 		switch mask {
-		case Unset:
+		case UnsetHeader:
 			// If the mask is being applied strictly, and the headersMask is Unset for this header, we skip it
 			if isStrict {
 				continue
@@ -93,5 +93,5 @@ func hashString(value string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(hasher.Sum(nil)), nil
+	return fmt.Sprintf("%x", (hasher.Sum(nil))), nil
 }

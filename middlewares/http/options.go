@@ -3,6 +3,7 @@ package firetail
 import (
 	"net/http"
 
+	"github.com/FireTail-io/firetail-go-lib/headers"
 	"github.com/FireTail-io/firetail-go-lib/utils"
 )
 
@@ -25,13 +26,13 @@ type Options struct {
 	DisableValidation bool
 
 	// RequestHeadersMask is a map of header names to HeaderMask values, which can be used to control the request headers reported to Firetail
-	RequestHeadersMask *map[string]utils.HeaderMask
+	RequestHeadersMask *map[string]headers.HeaderMask
 
 	// RequestHeadersMaskStrict is an optional flag which, if set to true, will configure the Firetail middleware to only report request headers explicitly described in the RequestHeadersMask
 	RequestHeadersMaskStrict bool
 
 	// ResponseHeadersMask is a map of header names to HeaderMask values, which can be used to control the response headers reported to Firetail
-	ResponseHeadersMask *map[string]utils.HeaderMask
+	ResponseHeadersMask *map[string]headers.HeaderMask
 
 	// ResponseHeadersMaskStrict is an optional flag which, if set to true, will configure the Firetail middleware to only report response headers explicitly described in the ResponseHeadersMask
 	ResponseHeadersMaskStrict bool
