@@ -64,7 +64,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			defer func() {
 				logEntry.Response = logging.Response{
 					StatusCode: int64(localResponseWriter.StatusCode),
-					Body:       string(localResponseWriter.ResponseBody),
+					Body:       options.ResponseSanitisationCallback(localResponseWriter.ResponseBody),
 					Headers:    headers.Mask(localResponseWriter.Header(), *options.ResponseHeadersMask, options.ResponseHeadersMaskStrict),
 				}
 				batchLogger.Enqueue(&logEntry)
@@ -80,7 +80,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 
 			// Now we have the request body, we can fill it into our log entry
-			logEntry.Request.Body = string(requestBody)
+			logEntry.Request.Body = options.RequestSanitisationCallback(requestBody)
 
 			// Check there's a corresponding route for this request
 			route, pathParams, err := router.FindRoute(r)
