@@ -38,7 +38,7 @@ func Mask(unmaskedHeaders map[string][]string, headersMask map[string]HeaderMask
 		case UnsetHeader:
 			// If the mask is being applied strictly, and the headersMask is Unset for this header, we skip it
 			if isStrict {
-				continue
+				break
 			}
 			// Else, we treat it as if it's preserved
 			maskedHeaders[headerName] = headerValues
