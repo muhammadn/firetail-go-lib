@@ -61,7 +61,7 @@ func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]Hea
 			break
 
 		case HashHeader:
-			hashedHeaderName, err := hashValue(headerName)
+			hashedHeaderName, err := hashString(headerName)
 			if err != nil {
 				hashedHeaderName = fmt.Sprintf("Failed to hash header name (%d)", headerNameHashFails)
 				headerNameHashFails += 1
@@ -77,7 +77,7 @@ func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]Hea
 func hashValues(values []string) []string {
 	hashedValues := []string{}
 	for _, value := range values {
-		hashedValue, err := hashValue(value)
+		hashedValue, err := hashString(value)
 		if err != nil {
 			hashedValues = append(hashedValues, "Failed to hash, err: "+err.Error())
 			continue
@@ -87,7 +87,7 @@ func hashValues(values []string) []string {
 	return hashedValues
 }
 
-func hashValue(value string) (string, error) {
+func hashString(value string) (string, error) {
 	hasher := crypto.SHA1.New()
 	_, err := hasher.Write([]byte(value))
 	if err != nil {
