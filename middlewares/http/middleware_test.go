@@ -85,7 +85,7 @@ func TestRequestToInvalidRoute(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "404 - Not Found", string(respBody))
+	assert.Equal(t, "404 (Not Found): request made to /not-implemented but did not match any routes", string(respBody))
 }
 
 func TestRequestWithDisallowedMethod(t *testing.T) {
@@ -108,7 +108,7 @@ func TestRequestWithDisallowedMethod(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "405 - Method Not Allowed", string(respBody))
+	assert.Equal(t, "405 (Method Not Allowed): GET method is not supported on this route", string(respBody))
 }
 
 func TestRequestWithInvalidBody(t *testing.T) {
@@ -134,7 +134,7 @@ func TestRequestWithInvalidBody(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "400 - Bad Request", string(respBody))
+	assert.Equal(t, "400 (Bad Request): validation failed on request: request body has an error: header Content-Type has unexpected value \"\"", string(respBody))
 }
 
 func TestInvalidResponseBody(t *testing.T) {
@@ -161,7 +161,11 @@ func TestInvalidResponseBody(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "500 - Internal Server Error", string(respBody))
+	assert.Equal(
+		t,
+		"500 (Internal Server Error): validation failed on response: response body doesn't match the schema: Error at \"/description\": value is not one of the allowed values\nSchema:\n  {\n    \"enum\": [\n      \"A test JSON object\"\n    ],\n    \"type\": \"string\"\n  }\n\nValue:\n  \"A different test JSON object\"\n",
+		string(respBody),
+	)
 }
 
 func TestDisabledRequestValidation(t *testing.T) {
