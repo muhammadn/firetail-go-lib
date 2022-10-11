@@ -61,6 +61,7 @@ func (o *Options) setDefaults() {
 
 	if o.ErrHandler == nil {
 		o.ErrHandler = func(err error, w *utils.ResponseWriter) {
+			w.Header().Add("Content-Type", "text/plain")
 			switch err {
 			case utils.ErrPathNotFound:
 				w.WriteHeader(404)
