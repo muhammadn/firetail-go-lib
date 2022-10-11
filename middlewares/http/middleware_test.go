@@ -45,5 +45,5 @@ func TestValidRequest(t *testing.T) {
 	// Response body should be "I'm Healthy! :)"
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, []byte("I'm Healthy! :)"), respBody)
+	assert.Equal(t, "I'm Healthy! :)", string(respBody))
 }
