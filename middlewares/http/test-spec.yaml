@@ -3,13 +3,29 @@ info:
   title: Test Spec
   version: '0.1'
 paths:
-  /health:
-    get:
+  /implemented:
+    post:
+      requestBody:
+        description: A test JSON object
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/exampleJSON'
       responses:
         '200':
           description: Status of the server
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-                enum: ["I'm Healthy! :)"]
+                $ref: '#/components/schemas/exampleJSON'
+components:
+  schemas:
+    exampleJSON:
+      type: object
+      properties:
+        description:
+          type: string
+          enum: ["A test JSON object"]
+      required: [ "description" ]
+      additionalProperties: false
