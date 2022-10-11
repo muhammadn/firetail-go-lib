@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/FireTail-io/firetail-go-lib/headers"
 	"github.com/FireTail-io/firetail-go-lib/logging"
 	"github.com/FireTail-io/firetail-go-lib/utils"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -46,7 +45,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				DateCreated: time.Now().UnixMilli(),
 				Request: logging.Request{
 					HTTPProtocol: logging.HTTPProtocol(r.Proto),
-					Headers:      headers.Mask(r.Header, *options.RequestHeadersMask, options.RequestHeadersMaskStrict),
+					Headers:      logging.MaskHeaders(r.Header, *options.RequestHeadersMask, options.RequestHeadersMaskStrict),
 					Method:       logging.Method(r.Method),
 					IP:           options.SourceIPCallback(r),
 				},
@@ -65,7 +64,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				logEntry.Response = logging.Response{
 					StatusCode: int64(localResponseWriter.StatusCode),
 					Body:       options.ResponseSanitisationCallback(localResponseWriter.ResponseBody),
-					Headers:    headers.Mask(localResponseWriter.Header(), *options.ResponseHeadersMask, options.ResponseHeadersMaskStrict),
+					Headers:    logging.MaskHeaders(localResponseWriter.Header(), *options.ResponseHeadersMask, options.ResponseHeadersMaskStrict),
 				}
 				batchLogger.Enqueue(&logEntry)
 				localResponseWriter.Publish()

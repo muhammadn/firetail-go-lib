@@ -1,4 +1,4 @@
-package headers
+package logging
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ func TestStrictUnsetIsRemoved(t *testing.T) {
 		"Test-Header": {"test-value"},
 	}
 
-	maskedHeaders := Mask(unmaskedHeaders, headersMask, true)
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, true)
 
 	require.Empty(t, maskedHeaders)
 }
@@ -28,7 +28,7 @@ func TestNonStrictUnsetIsPreserved(t *testing.T) {
 		"Test-Header": {"test-value"},
 	}
 
-	maskedHeaders := Mask(unmaskedHeaders, headersMask, false)
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
 	require.Equal(t, unmaskedHeaders, maskedHeaders)
 }
@@ -41,7 +41,7 @@ func TestPreserveHeaderIsPreserved(t *testing.T) {
 		"Test-Header": {"test-value"},
 	}
 
-	maskedHeaders := Mask(unmaskedHeaders, headersMask, true)
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, true)
 
 	require.Equal(t, unmaskedHeaders, maskedHeaders)
 }
@@ -54,7 +54,7 @@ func TestRemoveHeaderIsRemoved(t *testing.T) {
 		"Test-Header": {"test-value"},
 	}
 
-	maskedHeaders := Mask(unmaskedHeaders, headersMask, false)
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
 	assert.Empty(t, maskedHeaders)
 }
@@ -67,7 +67,7 @@ func TestRemoveHeaderValuesRemovesValues(t *testing.T) {
 		"Test-Header": {"test-value"},
 	}
 
-	maskedHeaders := Mask(unmaskedHeaders, headersMask, false)
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
 	assert.Empty(t, maskedHeaders["Test-Header"])
 }
@@ -80,7 +80,7 @@ func TestHashHeaderValuesHashesValues(t *testing.T) {
 		"Test-Header": {"test-value"},
 	}
 
-	maskedHeaders := Mask(unmaskedHeaders, headersMask, false)
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
 	require.Contains(t, maskedHeaders, "Test-Header")
 	assert.Len(t, maskedHeaders["Test-Header"], 1)
@@ -99,7 +99,7 @@ func TestHashHeaderValuesHashesMultipleValues(t *testing.T) {
 		"Test-Header": {"test-value-1", "test-value-2"},
 	}
 
-	maskedHeaders := Mask(unmaskedHeaders, headersMask, false)
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
 	require.Contains(t, maskedHeaders, "Test-Header")
 	assert.Len(t, maskedHeaders["Test-Header"], 2)
@@ -123,7 +123,7 @@ func TestHashHeaderHashesHeader(t *testing.T) {
 		"Test-Header": {"test-value"},
 	}
 
-	maskedHeaders := Mask(unmaskedHeaders, headersMask, false)
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
 	require.Contains(t, maskedHeaders, "e611b81f6ddc182d400d28bac79d0aac581afeb8")
 	assert.Len(t, maskedHeaders["e611b81f6ddc182d400d28bac79d0aac581afeb8"], 1)
@@ -144,7 +144,7 @@ func TestHashHeaderHashesMultipleHeaders(t *testing.T) {
 		"Test-Header-2": {"test-value"},
 	}
 
-	maskedHeaders := Mask(unmaskedHeaders, headersMask, false)
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
 	assert.Len(t, maskedHeaders, 2)
 

@@ -1,4 +1,4 @@
-package headers
+package logging
 
 import (
 	"crypto"
@@ -27,7 +27,7 @@ const (
 	HashHeader
 )
 
-func Mask(unmaskedHeaders map[string][]string, headersMask map[string]HeaderMask, isStrict bool) map[string][]string {
+func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]HeaderMask, isStrict bool) map[string][]string {
 	maskedHeaders := map[string][]string{}
 
 	headerNameHashFails := 0

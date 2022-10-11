@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/FireTail-io/firetail-go-lib/headers"
+	"github.com/FireTail-io/firetail-go-lib/logging"
 	"github.com/FireTail-io/firetail-go-lib/utils"
 )
 
@@ -32,7 +32,7 @@ type Options struct {
 	RequestSanitisationCallback func([]byte) string
 
 	// RequestHeadersMask is a map of header names to HeaderMask values, which can be used to control the request headers reported to Firetail
-	RequestHeadersMask *map[string]headers.HeaderMask
+	RequestHeadersMask *map[string]logging.HeaderMask
 
 	// RequestHeadersMaskStrict is an optional flag which, if set to true, will configure the Firetail middleware to only report request headers explicitly described in the RequestHeadersMask
 	RequestHeadersMaskStrict bool
@@ -43,7 +43,7 @@ type Options struct {
 	ResponseSanitisationCallback func([]byte) string
 
 	// ResponseHeadersMask is a map of header names to HeaderMask values, which can be used to control the response headers reported to Firetail
-	ResponseHeadersMask *map[string]headers.HeaderMask
+	ResponseHeadersMask *map[string]logging.HeaderMask
 
 	// ResponseHeadersMaskStrict is an optional flag which, if set to true, will configure the Firetail middleware to only report response headers explicitly described in the ResponseHeadersMask
 	ResponseHeadersMaskStrict bool
@@ -96,7 +96,7 @@ func (o *Options) setDefaults() {
 
 	if o.RequestHeadersMask == nil {
 		// TODO: create default
-		o.RequestHeadersMask = &map[string]headers.HeaderMask{}
+		o.RequestHeadersMask = &map[string]logging.HeaderMask{}
 	}
 
 	if o.ResponseSanitisationCallback == nil {
@@ -107,6 +107,6 @@ func (o *Options) setDefaults() {
 
 	if o.ResponseHeadersMask == nil {
 		// TODO: create default
-		o.ResponseHeadersMask = &map[string]headers.HeaderMask{}
+		o.ResponseHeadersMask = &map[string]logging.HeaderMask{}
 	}
 }
