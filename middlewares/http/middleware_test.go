@@ -2,6 +2,7 @@ package firetail
 
 import (
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,7 +17,7 @@ var healthHandler http.HandlerFunc = http.HandlerFunc(func(w http.ResponseWriter
 	w.Write([]byte("I'm Healthy! :)"))
 })
 
-func TestValidRequest(t *testing.T) {
+func TestValidRequestAndResponse(t *testing.T) {
 	// Get a middleware
 	middleware, err := GetMiddleware(&Options{
 		SpecPath: "./test-spec.yaml",
@@ -46,4 +47,18 @@ func TestValidRequest(t *testing.T) {
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
 	assert.Equal(t, "I'm Healthy! :)", string(respBody))
+}
+
+func TestInvalidSpecPath(t *testing.T) {
+	_, err := GetMiddleware(&Options{
+		SpecPath: "./test-spec-not-here.yaml",
+	})
+	require.IsType(t, &fs.PathError{}, err)
+}
+
+func TestInvalidSpec(t *testing.T) {
+	_, err := GetMiddleware(&Options{
+		SpecPath: "./test-spec-invalid.yaml",
+	})
+	require.Equal(t, "invalid paths: a short description of the response is required", err.Error())
 }
