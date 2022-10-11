@@ -21,7 +21,7 @@ type Options struct {
 	// ErrHandler is an optional callback func which is given an error and a ResponseWriter to which an apropriate response can be written
 	// for the error. This allows you customise the responses given, when for example a request or response fails to validate against the
 	// openapi spec, to be consistent with the format in which the rest of your application returns error responses
-	ErrHandler func(error, *utils.ResponseWriter)
+	ErrHandler func(error, http.ResponseWriter)
 
 	// DisableValidation is an optional flag which, if set to true, disables request & response validation
 	DisableValidation bool
@@ -60,7 +60,7 @@ func (o *Options) setDefaults() {
 	}
 
 	if o.ErrHandler == nil {
-		o.ErrHandler = func(err error, w *utils.ResponseWriter) {
+		o.ErrHandler = func(err error, w http.ResponseWriter) {
 			w.Header().Add("Content-Type", "text/plain")
 			switch err {
 			case utils.ErrPathNotFound:

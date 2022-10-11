@@ -2,7 +2,9 @@ package firetail
 
 import (
 	"context"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"time"
 
 	"github.com/FireTail-io/firetail-go-lib/utils"
@@ -10,7 +12,7 @@ import (
 	"github.com/getkin/kin-openapi/routers"
 )
 
-func handleWithValidation(w *utils.ResponseWriter, r *http.Request, next http.Handler, route *routers.Route, pathParams map[string]string) (time.Duration, error) {
+func handleWithValidation(w *httptest.ResponseRecorder, r *http.Request, next http.Handler, route *routers.Route, pathParams map[string]string) (time.Duration, error) {
 	// Validate the request against the OpenAPI spec. We'll also need the requestValidationInput again later when validating the response.
 	requestValidationInput := &openapi3filter.RequestValidationInput{
 		Request:    r,
@@ -34,13 +36,20 @@ func handleWithValidation(w *utils.ResponseWriter, r *http.Request, next http.Ha
 			PathParams: pathParams,
 			Route:      route,
 		},
-		Status: w.StatusCode,
+		Status: w.Result().StatusCode,
 		Header: w.Header(),
 		Options: &openapi3filter.Options{
 			IncludeResponseStatus: true,
 		},
 	}
-	responseValidationInput.SetBodyBytes(w.ResponseBody)
+
+	responseBytes, err := ioutil.ReadAll(w.Result().Body)
+	if err != nil {
+		return time.Duration(0), utils.ErrResponseValidationFailed
+	}
+
+	responseValidationInput.SetBodyBytes(responseBytes)
+
 	err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
 	if err != nil {
 		return time.Duration(0), utils.ErrResponseValidationFailed

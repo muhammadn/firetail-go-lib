@@ -6,10 +6,10 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"time"
 
 	"github.com/FireTail-io/firetail-go-lib/logging"
-	"github.com/FireTail-io/firetail-go-lib/utils"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 )
@@ -57,17 +57,28 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 
 			// Create a Firetail ResponseWriter so we can access the response body, status code etc. for logging & validation later
-			localResponseWriter := &utils.ResponseWriter{ResponseWriter: w, StatusCode: 0, ResponseBody: nil}
+			localResponseWriter := httptest.NewRecorder()
 
 			// No matter what happens, read the response from the response writer, enqueue the log entry & publish the response that was written to the ResponseWriter
 			defer func() {
 				logEntry.Response = logging.Response{
-					StatusCode: int64(localResponseWriter.StatusCode),
-					Body:       options.ResponseSanitisationCallback(localResponseWriter.ResponseBody),
-					Headers:    logging.MaskHeaders(localResponseWriter.Header(), *options.ResponseHeadersMask, options.ResponseHeadersMaskStrict),
+					StatusCode: int64(localResponseWriter.Code),
+					Body:       options.ResponseSanitisationCallback(localResponseWriter.Body.Bytes()),
+					Headers: logging.MaskHeaders(
+						localResponseWriter.Result().Header,
+						*options.ResponseHeadersMask,
+						options.ResponseHeadersMaskStrict,
+					),
 				}
 				batchLogger.Enqueue(&logEntry)
-				localResponseWriter.Publish()
+
+				for key, vals := range localResponseWriter.HeaderMap {
+					for _, val := range vals {
+						w.Header().Add(key, val)
+					}
+				}
+				w.WriteHeader(localResponseWriter.Code)
+				w.Write(localResponseWriter.Body.Bytes())
 			}()
 
 			// Read in the request body so we can log it & replace r.Body with a new copy for the next http.Handler to read from
@@ -99,7 +110,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 
 			// If the request validation hasn't been disabled, then we handle the request with validation
-			chainResponseWriter := &utils.ResponseWriter{ResponseWriter: localResponseWriter, StatusCode: 0, ResponseBody: nil}
+			chainResponseWriter := httptest.NewRecorder()
 			executionTime, err := handleWithValidation(chainResponseWriter, r, next, route, pathParams)
 
 			// We now know the execution time, so we can fill it into our log entry
@@ -112,7 +123,13 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 
 			// If there's no err, then we can publish the response written down the chain to our localResponseWriter
-			chainResponseWriter.Publish()
+			for key, vals := range chainResponseWriter.HeaderMap {
+				for _, val := range vals {
+					localResponseWriter.Header().Add(key, val)
+				}
+			}
+			localResponseWriter.WriteHeader(chainResponseWriter.Code)
+			localResponseWriter.Write(chainResponseWriter.Body.Bytes())
 		})
 	}
 
