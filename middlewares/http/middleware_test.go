@@ -44,7 +44,7 @@ func TestValidRequestAndResponse(t *testing.T) {
 	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
 	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
 	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
-	assert.Equal(t, responseRecorder.HeaderMap["Content-Type"][0], "application/json")
+	assert.Equal(t, "application/json", responseRecorder.HeaderMap["Content-Type"][0])
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
@@ -81,7 +81,7 @@ func TestRequestToInvalidRoute(t *testing.T) {
 	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
 	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
 	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
-	assert.Equal(t, responseRecorder.HeaderMap["Content-Type"][0], "text/plain")
+	assert.Equal(t, "text/plain", responseRecorder.HeaderMap["Content-Type"][0])
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
@@ -104,7 +104,7 @@ func TestRequestWithDisallowedMethod(t *testing.T) {
 	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
 	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
 	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
-	assert.Equal(t, responseRecorder.HeaderMap["Content-Type"][0], "text/plain")
+	assert.Equal(t, "text/plain", responseRecorder.HeaderMap["Content-Type"][0])
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
@@ -130,7 +130,7 @@ func TestRequestWithInvalidBody(t *testing.T) {
 	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
 	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
 	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
-	assert.Equal(t, responseRecorder.HeaderMap["Content-Type"][0], "text/plain")
+	assert.Equal(t, "text/plain", responseRecorder.HeaderMap["Content-Type"][0])
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
@@ -157,7 +157,7 @@ func TestInvalidResponseBody(t *testing.T) {
 	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
 	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
 	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
-	assert.Equal(t, responseRecorder.HeaderMap["Content-Type"][0], "text/plain")
+	assert.Equal(t, "text/plain", responseRecorder.HeaderMap["Content-Type"][0])
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
