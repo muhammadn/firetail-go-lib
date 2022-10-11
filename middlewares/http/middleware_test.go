@@ -18,6 +18,12 @@ var healthHandler http.HandlerFunc = http.HandlerFunc(func(w http.ResponseWriter
 	w.Write([]byte("{\"description\":\"A test JSON object\"}"))
 })
 
+var healthHandlerWithWrongResponseBody http.HandlerFunc = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write([]byte("{\"description\":\"A different test JSON object\"}"))
+})
+
 func TestValidRequestAndResponse(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		SpecPath: "./test-spec.yaml",
@@ -129,4 +135,31 @@ func TestRequestWithInvalidBody(t *testing.T) {
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
 	assert.Equal(t, "400 - Bad Request", string(respBody))
+}
+
+func TestInvalidResponseBody(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		SpecPath: "./test-spec.yaml",
+	})
+	require.Nil(t, err)
+	handler := middleware(healthHandlerWithWrongResponseBody)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"A test JSON object\"}"))),
+	)
+	request.Header.Add("Content-Type", "application/json")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 500, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, responseRecorder.HeaderMap["Content-Type"][0], "text/plain")
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(t, "500 - Internal Server Error", string(respBody))
 }
