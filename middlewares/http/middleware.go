@@ -11,6 +11,7 @@ import (
 
 	"github.com/FireTail-io/firetail-go-lib/logging"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/routers"
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 )
 
@@ -94,7 +95,13 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 			// Check there's a corresponding route for this request
 			route, pathParams, err := router.FindRoute(r)
-			if err != nil {
+			if err == routers.ErrMethodNotAllowed {
+				options.ErrHandler(&MethodNotAllowedError{RequestMethod: r.Method}, localResponseWriter)
+				return
+			} else if err == routers.ErrPathNotFound {
+				options.ErrHandler(&RouteNotFoundError{r.URL.Path}, localResponseWriter)
+				return
+			} else if err != nil {
 				options.ErrHandler(err, localResponseWriter)
 				return
 			}

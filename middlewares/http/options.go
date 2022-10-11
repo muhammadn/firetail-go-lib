@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/FireTail-io/firetail-go-lib/logging"
-	"github.com/FireTail-io/firetail-go-lib/utils"
 )
 
 // Options is an options struct used when creating a Firetail middleware (GetMiddleware)
@@ -62,28 +61,25 @@ func (o *Options) setDefaults() {
 	if o.ErrHandler == nil {
 		o.ErrHandler = func(err error, w http.ResponseWriter) {
 			w.Header().Add("Content-Type", "text/plain")
-			switch err {
-			case utils.ErrPathNotFound:
+			if validationErr, isValidationErr := err.(*ValidationError); isValidationErr {
+				switch validationErr.Target {
+				case Request:
+					w.WriteHeader(400)
+					w.Write([]byte("400 (Bad Request): " + err.Error()))
+				case Response:
+					w.WriteHeader(500)
+					w.Write([]byte("500 (Internal Server Error): " + err.Error()))
+				}
+			} else if _, isPathNotFoundErr := err.(*RouteNotFoundError); isPathNotFoundErr {
 				w.WriteHeader(404)
-				w.Write([]byte("404 - Not Found"))
-				break
-			case utils.ErrMethodNotAllowed:
+				w.Write([]byte("404 (Not Found): " + err.Error()))
+			} else if _, isMethodNotAllowedErr := err.(*MethodNotAllowedError); isMethodNotAllowedErr {
 				w.WriteHeader(405)
-				w.Write([]byte("405 - Method Not Allowed"))
-				break
-			case utils.ErrRequestValidationFailed:
-				w.WriteHeader(400)
-				w.Write([]byte("400 - Bad Request"))
-				break
-			case utils.ErrResponseValidationFailed:
-				w.WriteHeader(500)
-				w.Write([]byte("500 - Internal Server Error"))
-				return
-			default:
+				w.Write([]byte("405 (Method Not Allowed): " + err.Error()))
+			} else {
 				// Even if the err is nil, we return a 500, as defaultErrHandler should never be called with a nil err
 				w.WriteHeader(500)
-				w.Write([]byte("500 - Internal Server Error"))
-				break
+				w.Write([]byte("500 (Internal Server Error): " + err.Error()))
 			}
 		}
 	}

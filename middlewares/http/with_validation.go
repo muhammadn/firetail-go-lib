@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/FireTail-io/firetail-go-lib/utils"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers"
 )
@@ -21,7 +20,7 @@ func handleWithValidation(w *httptest.ResponseRecorder, r *http.Request, next ht
 	}
 	err := openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 	if err != nil {
-		return time.Duration(0), utils.ErrRequestValidationFailed
+		return time.Duration(0), &ValidationError{Request, err.Error()}
 	}
 
 	// Serve the next handler down the chain & take note of the execution time
@@ -45,14 +44,14 @@ func handleWithValidation(w *httptest.ResponseRecorder, r *http.Request, next ht
 
 	responseBytes, err := ioutil.ReadAll(w.Result().Body)
 	if err != nil {
-		return time.Duration(0), utils.ErrResponseValidationFailed
+		return time.Duration(0), &ValidationError{Response, err.Error()}
 	}
 
 	responseValidationInput.SetBodyBytes(responseBytes)
 
 	err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
 	if err != nil {
-		return time.Duration(0), utils.ErrResponseValidationFailed
+		return time.Duration(0), &ValidationError{Response, err.Error()}
 	}
 
 	return executionTime, nil
