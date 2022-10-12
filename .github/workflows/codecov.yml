@@ -18,8 +18,8 @@ jobs:
       - name: Run coverage
         run: docker run \
                     --rm \
-                    -v ${{ GITHUB_WORKSPACE }}:/out \
-                    -v ${{ GITHUB_WORKSPACE }}:/src \
+                    -v ${{ env.GITHUB_WORKSPACE }}:/out \
+                    -v ${{ env.GITHUB_WORKSPACE }}:/src \
                     -w /src \
                     golang:${{ matrix.go-image }}   \
                     go test ./... -race -coverprofile /out/coverage.out -covermode atomic
