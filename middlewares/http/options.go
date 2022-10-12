@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/FireTail-io/firetail-go-lib/logging"
+	"github.com/getkin/kin-openapi/openapi3filter"
 )
 
 // Options is an options struct used when creating a Firetail middleware (GetMiddleware)
@@ -24,6 +25,10 @@ type Options struct {
 
 	// DisableValidation is an optional flag which, if set to true, disables request & response validation
 	DisableValidation bool
+
+	// CustomBodyDecoders is a map of Content-Type header values to openapi3 decoders - if the kin-openapi module does not support your
+	// Content-Type by default, you will need to add a custom decoder here.
+	CustomBodyDecoders map[string]openapi3filter.BodyDecoder
 
 	// RequestSanitisationCallback is an optional callback which is given the request body as bytes & returns a stringified request body which
 	// is then logged to Firetail. This is useful for writing custom logic to redact any sensitive data from your request bodies before it is logged

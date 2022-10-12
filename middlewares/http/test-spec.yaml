@@ -11,21 +11,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/exampleJSON'
+              $ref: '#/components/schemas/exampleDocument'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/exampleDocument'
       responses:
         '200':
           description: Status of the server
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/exampleJSON'
+                $ref: '#/components/schemas/exampleDocument'
 components:
   schemas:
-    exampleJSON:
+    exampleDocument:
       type: object
       properties:
         description:
           type: string
-          enum: ["A test JSON object"]
+          enum: ["test description"]
       required: [ "description" ]
       additionalProperties: false

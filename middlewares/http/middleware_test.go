@@ -4,10 +4,14 @@ import (
 	"bytes"
 	"io"
 	"io/fs"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/sbabiv/xml2map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,13 +19,13 @@ import (
 var healthHandler http.HandlerFunc = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Header().Add("Content-Type", "application/json")
-	w.Write([]byte("{\"description\":\"A test JSON object\"}"))
+	w.Write([]byte("{\"description\":\"test description\"}"))
 })
 
 var healthHandlerWithWrongResponseBody http.HandlerFunc = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Header().Add("Content-Type", "application/json")
-	w.Write([]byte("{\"description\":\"A different test JSON object\"}"))
+	w.Write([]byte("{\"description\":\"another test description\"}"))
 })
 
 func TestValidRequestAndResponse(t *testing.T) {
@@ -34,7 +38,7 @@ func TestValidRequestAndResponse(t *testing.T) {
 
 	request := httptest.NewRequest(
 		"POST", "/implemented",
-		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"A test JSON object\"}"))),
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
 	)
 	request.Header.Add("Content-Type", "application/json")
 	handler.ServeHTTP(responseRecorder, request)
@@ -48,7 +52,7 @@ func TestValidRequestAndResponse(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "{\"description\":\"A test JSON object\"}", string(respBody))
+	assert.Equal(t, "{\"description\":\"test description\"}", string(respBody))
 }
 
 func TestInvalidSpecPath(t *testing.T) {
@@ -135,7 +139,7 @@ func TestRequestWithInvalidBody(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "400 (Bad Request): validation failed on request: request body has an error: doesn't match the schema: Error at \"/description\": property \"description\" is missing\nSchema:\n  {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"description\": {\n        \"enum\": [\n          \"A test JSON object\"\n        ],\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"description\"\n    ],\n    \"type\": \"object\"\n  }\n\nValue:\n  {}\n", string(respBody))
+	assert.Equal(t, "400 (Bad Request): validation failed on request: request body has an error: doesn't match the schema: Error at \"/description\": property \"description\" is missing\nSchema:\n  {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"description\": {\n        \"enum\": [\n          \"test description\"\n        ],\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"description\"\n    ],\n    \"type\": \"object\"\n  }\n\nValue:\n  {}\n", string(respBody))
 }
 
 func TestInvalidResponseBody(t *testing.T) {
@@ -148,7 +152,7 @@ func TestInvalidResponseBody(t *testing.T) {
 
 	request := httptest.NewRequest(
 		"POST", "/implemented",
-		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"A test JSON object\"}"))),
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
 	)
 	request.Header.Add("Content-Type", "application/json")
 	handler.ServeHTTP(responseRecorder, request)
@@ -164,7 +168,7 @@ func TestInvalidResponseBody(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"500 (Internal Server Error): validation failed on response: response body doesn't match the schema: Error at \"/description\": value is not one of the allowed values\nSchema:\n  {\n    \"enum\": [\n      \"A test JSON object\"\n    ],\n    \"type\": \"string\"\n  }\n\nValue:\n  \"A different test JSON object\"\n",
+		"500 (Internal Server Error): validation failed on response: response body doesn't match the schema: Error at \"/description\": value is not one of the allowed values\nSchema:\n  {\n    \"enum\": [\n      \"test description\"\n    ],\n    \"type\": \"string\"\n  }\n\nValue:\n  \"another test description\"\n",
 		string(respBody),
 	)
 }
@@ -194,7 +198,7 @@ func TestDisabledRequestValidation(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "{\"description\":\"A test JSON object\"}", string(respBody))
+	assert.Equal(t, "{\"description\":\"test description\"}", string(respBody))
 }
 
 func TestDisabledResponseValidation(t *testing.T) {
@@ -208,7 +212,7 @@ func TestDisabledResponseValidation(t *testing.T) {
 
 	request := httptest.NewRequest(
 		"POST", "/implemented",
-		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"A test JSON object\"}"))),
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
 	)
 	request.Header.Add("Content-Type", "application/json")
 	handler.ServeHTTP(responseRecorder, request)
@@ -222,7 +226,7 @@ func TestDisabledResponseValidation(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "{\"description\":\"A different test JSON object\"}", string(respBody))
+	assert.Equal(t, "{\"description\":\"another test description\"}", string(respBody))
 }
 
 func TestUnexpectedContentType(t *testing.T) {
@@ -235,7 +239,7 @@ func TestUnexpectedContentType(t *testing.T) {
 
 	request := httptest.NewRequest(
 		"POST", "/implemented",
-		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"A test JSON object\"}"))),
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
 	)
 	request.Header.Add("Content-Type", "text/plain")
 	handler.ServeHTTP(responseRecorder, request)
@@ -250,4 +254,42 @@ func TestUnexpectedContentType(t *testing.T) {
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
 	assert.Equal(t, "415 (Unsupported Media Type): content type 'text/plain' is not supported on this route", string(respBody))
+}
+
+func TestCustomXMLDecoder(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		SpecPath: "./test-spec.yaml",
+		CustomBodyDecoders: map[string]openapi3filter.BodyDecoder{
+			"application/xml": func(r io.Reader, h http.Header, sr *openapi3.SchemaRef, ef openapi3filter.EncodingFn) (interface{}, error) {
+				decoder := xml2map.NewDecoder(r)
+				result, err := decoder.Decode()
+				if err != nil {
+					return nil, err
+				}
+				log.Println(result)
+				return result, nil
+			},
+		},
+	})
+	require.Nil(t, err)
+	handler := middleware(healthHandler)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented",
+		io.NopCloser(bytes.NewBuffer([]byte("<description>test description</description>"))),
+	)
+	request.Header.Add("Content-Type", "application/xml")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 200, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "application/json", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(t, "{\"description\":\"test description\"}", string(respBody))
 }
