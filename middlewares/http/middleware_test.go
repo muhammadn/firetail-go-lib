@@ -248,5 +248,5 @@ func TestUnexpectedContentType(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "", string(respBody))
+	assert.Equal(t, "415 (Unsupported Media Type): content type 'text/plain' is not supported on this route", string(respBody))
 }
