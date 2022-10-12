@@ -18,8 +18,8 @@ jobs:
       - name: Run coverage
         run: docker run \
                     --rm \
-                    -v ${{ github.workspace }}:/out \
-                    -v ${{ github.workspace }}:/src \
+                    -v /home/runner/work/firetail-go-lib/firetail-go-lib:/out \
+                    -v /home/runner/work/firetail-go-lib/firetail-go-lib:/src \
                     -w /src \
                     golang:${{ matrix.go-image }}   \
                     go test ./... -race -coverprofile /out/coverage.out -covermode atomic
