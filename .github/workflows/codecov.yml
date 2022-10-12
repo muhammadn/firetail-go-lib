@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run coverage
-        run: docker run --rm -v /home/runner/work/firetail-go-lib/firetail-go-lib:/out -v /home/runner/work/firetail-go-lib/firetail-go-lib:/src -w /src golang:${{ matrix.go-image }}   go test ./... -race -coverprofile /out/coverage.out -covermode atomic
+        run: docker run --rm -v ${{ github.workspace }}:/out -v ${{ github.workspace }}:/src -w /src golang:${{ matrix.go-image }} go test ./... -race -coverprofile /out/coverage.out -covermode atomic
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
