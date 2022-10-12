@@ -223,3 +223,30 @@ func TestDisabledResponseValidation(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, "{\"description\":\"A different test JSON object\"}", string(respBody))
 }
+
+func TestUnexpectedContentType(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		SpecPath: "./test-spec.yaml",
+	})
+	require.Nil(t, err)
+	handler := middleware(healthHandler)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"A test JSON object\"}"))),
+	)
+	request.Header.Add("Content-Type", "text/plain")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 415, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "text/plain", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(t, "", string(respBody))
+}
