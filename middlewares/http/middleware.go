@@ -11,6 +11,7 @@ import (
 
 	"github.com/FireTail-io/firetail-go-lib/logging"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers"
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 )
@@ -60,7 +61,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Create a Firetail ResponseWriter so we can access the response body, status code etc. for logging & validation later
 			localResponseWriter := httptest.NewRecorder()
 
-			// No matter what happens, read the response from the response writer, enqueue the log entry & publish the response that was written to the ResponseWriter
+			// No matter what happens, read the response from the local response writer, enqueue the log entry & publish the response that was written to the ResponseWriter
 			defer func() {
 				logEntry.Response = logging.Response{
 					StatusCode: int64(localResponseWriter.Code),
@@ -111,25 +112,56 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 			// If validation has been disabled, everything is far simpler...
 			if options.DisableValidation {
-				executionTime := handleWithoutValidation(localResponseWriter, r, next)
-				logEntry.ExecutionTime = float64(executionTime)
+				startTime := time.Now()
+				next.ServeHTTP(localResponseWriter, r)
+				logEntry.ExecutionTime = float64(time.Since(startTime).Milliseconds())
 				return
 			}
 
-			// If the request validation hasn't been disabled, then we handle the request with validation
-			chainResponseWriter := httptest.NewRecorder()
-			executionTime, err := handleWithValidation(chainResponseWriter, r, next, route, pathParams)
-
-			// We now know the execution time, so we can fill it into our log entry
-			logEntry.ExecutionTime = float64(executionTime)
-
-			// Depending upon the err we get, we may need to override the response with a particular code & body
+			// Validate the request against the OpenAPI spec. We'll also need the requestValidationInput again later when validating the response.
+			requestValidationInput := &openapi3filter.RequestValidationInput{
+				Request:    r,
+				PathParams: pathParams,
+				Route:      route,
+			}
+			err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 			if err != nil {
-				options.ErrHandler(err, localResponseWriter)
+				options.ErrHandler(&ValidationError{Request, err.Error()}, localResponseWriter)
 				return
 			}
 
-			// If there's no err, then we can publish the response written down the chain to our localResponseWriter
+			// Serve the next handler down the chain & take note of the execution time
+			chainResponseWriter := httptest.NewRecorder()
+			startTime := time.Now()
+			next.ServeHTTP(chainResponseWriter, r)
+			logEntry.ExecutionTime = float64(time.Since(startTime).Milliseconds())
+
+			// Validate the response against the openapi spec
+			responseValidationInput := &openapi3filter.ResponseValidationInput{
+				RequestValidationInput: &openapi3filter.RequestValidationInput{
+					Request:    r,
+					PathParams: pathParams,
+					Route:      route,
+				},
+				Status: chainResponseWriter.Result().StatusCode,
+				Header: chainResponseWriter.Header(),
+				Options: &openapi3filter.Options{
+					IncludeResponseStatus: true,
+				},
+			}
+			responseBytes, err := ioutil.ReadAll(chainResponseWriter.Result().Body)
+			if err != nil {
+				options.ErrHandler(&ValidationError{Response, err.Error()}, localResponseWriter)
+				return
+			}
+			responseValidationInput.SetBodyBytes(responseBytes)
+			err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
+			if err != nil {
+				options.ErrHandler(&ValidationError{Response, err.Error()}, localResponseWriter)
+				return
+			}
+
+			// If the response written down the chain passed the validation, we can write it to our localResponseWriter
 			for key, vals := range chainResponseWriter.HeaderMap {
 				for _, val := range vals {
 					localResponseWriter.Header().Add(key, val)
