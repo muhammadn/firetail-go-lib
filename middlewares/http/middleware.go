@@ -132,8 +132,8 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 						options.ErrHandler(
 							&ContentTypeError{r.Header.Get("Content-Type")}, localResponseWriter,
 						)
-					}
 					return
+					}
 				}
 				options.ErrHandler(&ValidationError{Request, err.Error()}, localResponseWriter)
 				return
