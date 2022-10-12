@@ -36,6 +36,11 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 		return nil, err
 	}
 
+	// Register any custom body decoders
+	for contentType, bodyDecoder := range options.CustomBodyDecoders {
+		openapi3filter.RegisterBodyDecoder(contentType, bodyDecoder)
+	}
+
 	// Create a batchLogger to pass all our log entries to
 	// TODO: change max log age to a minute
 	batchLogger := logging.NewBatchLogger(1024*512, time.Second, options.FiretailEndpoint)
@@ -132,7 +137,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 						options.ErrHandler(
 							&ContentTypeError{r.Header.Get("Content-Type")}, localResponseWriter,
 						)
-					return
+						return
 					}
 				}
 				options.ErrHandler(&ValidationError{Request, err.Error()}, localResponseWriter)
