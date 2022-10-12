@@ -123,6 +123,7 @@ func TestRequestWithInvalidBody(t *testing.T) {
 		"POST", "/implemented",
 		io.NopCloser(bytes.NewBuffer([]byte("{}"))),
 	)
+	request.Header.Add("Content-Type", "application/json")
 	handler.ServeHTTP(responseRecorder, request)
 
 	assert.Equal(t, 400, responseRecorder.Code)
@@ -134,7 +135,7 @@ func TestRequestWithInvalidBody(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "400 (Bad Request): validation failed on request: request body has an error: header Content-Type has unexpected value \"\"", string(respBody))
+	assert.Equal(t, "400 (Bad Request): validation failed on request: request body has an error: doesn't match the schema: Error at \"/description\": property \"description\" is missing\nSchema:\n  {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"description\": {\n        \"enum\": [\n          \"A test JSON object\"\n        ],\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"description\"\n    ],\n    \"type\": \"object\"\n  }\n\nValue:\n  {}\n", string(respBody))
 }
 
 func TestInvalidResponseBody(t *testing.T) {
@@ -222,4 +223,31 @@ func TestDisabledResponseValidation(t *testing.T) {
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
 	assert.Equal(t, "{\"description\":\"A different test JSON object\"}", string(respBody))
+}
+
+func TestUnexpectedContentType(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		SpecPath: "./test-spec.yaml",
+	})
+	require.Nil(t, err)
+	handler := middleware(healthHandler)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"A test JSON object\"}"))),
+	)
+	request.Header.Add("Content-Type", "text/plain")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 415, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "text/plain", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(t, "415 (Unsupported Media Type): content type 'text/plain' is not supported on this route", string(respBody))
 }

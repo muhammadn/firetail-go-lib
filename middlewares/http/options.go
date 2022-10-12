@@ -76,6 +76,9 @@ func (o *Options) setDefaults() {
 			} else if _, isMethodNotAllowedErr := err.(*MethodNotAllowedError); isMethodNotAllowedErr {
 				w.WriteHeader(405)
 				w.Write([]byte("405 (Method Not Allowed): " + err.Error()))
+			} else if _, isContentTypeErr := err.(*ContentTypeError); isContentTypeErr {
+				w.WriteHeader(415)
+				w.Write([]byte("415 (Unsupported Media Type): " + err.Error()))
 			} else {
 				// Even if the err is nil, we return a 500, as defaultErrHandler should never be called with a nil err
 				w.WriteHeader(500)

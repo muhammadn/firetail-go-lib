@@ -18,6 +18,14 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("validation failed on %s: %s", e.Target, e.Reason)
 }
 
+type ContentTypeError struct {
+	Actual string
+}
+
+func (e *ContentTypeError) Error() string {
+	return fmt.Sprintf("content type '%s' is not supported on this route", e.Actual)
+}
+
 type MethodNotAllowedError struct {
 	RequestMethod string
 }
