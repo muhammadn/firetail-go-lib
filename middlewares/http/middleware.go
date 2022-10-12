@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"time"
 
 	"github.com/FireTail-io/firetail-go-lib/logging"
@@ -126,6 +127,14 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 			err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 			if err != nil {
+				if err, isRequestErr := err.(*openapi3filter.RequestError); isRequestErr {
+					if strings.Contains(err.Reason, "header Content-Type has unexpected value") {
+						options.ErrHandler(
+							&ContentTypeError{r.Header.Get("Content-Type")}, localResponseWriter,
+						)
+					}
+					return
+				}
 				options.ErrHandler(&ValidationError{Request, err.Error()}, localResponseWriter)
 				return
 			}
