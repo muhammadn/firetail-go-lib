@@ -2,10 +2,7 @@ package logging
 
 import (
 	"encoding/json"
-	"log"
 	"math/rand"
-	"os"
-	"runtime/pprof"
 	"strings"
 	"testing"
 	"time"
@@ -54,13 +51,6 @@ func TestOldLogIsSentImmediately(t *testing.T) {
 }
 
 func TestBatchesDoNotExceedMaxSize(t *testing.T) {
-	f, err := os.Create("TestBatchesDoNotExceedMaxSize.prof")
-	if err != nil {
-		log.Fatal(err)
-	}
-	pprof.StartCPUProfile(f)
-	defer pprof.StopCPUProfile()
-
 	const TestLogEntryCount = 1000
 	const MaxBatchSize = 1024 * 512 // 512KB in Bytes
 
@@ -100,12 +90,9 @@ func TestBatchesDoNotExceedMaxSize(t *testing.T) {
 	}
 
 	// Enqueue them all
-	log.Println("Enqueueing log entries...")
-	for i, logEntry := range testLogEntries {
-		log.Printf("Enqueuing log entry (%d)...\n", i)
+	for _, logEntry := range testLogEntries {
 		batchLogger.Enqueue(logEntry)
 	}
-	log.Println("Finished enqueueing!")
 
 	// Keep reading until we've seen all the log entries
 	logEntriesReceived := 0
