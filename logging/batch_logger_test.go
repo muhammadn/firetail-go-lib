@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"math/rand"
+	"os"
+	"runtime/pprof"
 	"strings"
 	"testing"
 	"time"
@@ -52,6 +54,13 @@ func TestOldLogIsSentImmediately(t *testing.T) {
 }
 
 func TestBatchesDoNotExceedMaxSize(t *testing.T) {
+	f, err := os.Create("TestBatchesDoNotExceedMaxSize.prof")
+	if err != nil {
+		log.Fatal(err)
+	}
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
 	const TestLogEntryCount = 1000
 	const MaxBatchSize = 1024 * 512 // 512KB in Bytes
 
