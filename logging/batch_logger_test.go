@@ -103,7 +103,7 @@ func TestBatchesDoNotExceedMaxSize(t *testing.T) {
 	log.Println("Enqueueing log entries...")
 	for i, logEntry := range testLogEntries {
 		log.Printf("Enqueuing log entry (%d)...\n", i)
-		go batchLogger.Enqueue(logEntry)
+		batchLogger.Enqueue(logEntry)
 	}
 	log.Println("Finished enqueueing!")
 
