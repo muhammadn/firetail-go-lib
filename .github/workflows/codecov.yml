@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run coverage
-        run: docker run --rm -v ${{ github.workspace }}:/src -w /src golang:${{ matrix.go-image }} go test ./... -race -coverprofile coverage.out -covermode atomic
+        run: docker run --rm -v ${{ github.workspace }}:/src -w /src golang:${{ matrix.go-image }} go test ./... -race -coverprofile coverage.out -covermode atomic -v
       - name: Show coverage
         run: cat coverage.out
       - name: Upload coverage to Codecov
