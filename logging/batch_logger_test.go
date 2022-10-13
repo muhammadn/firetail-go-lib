@@ -95,7 +95,7 @@ func TestBatchesDoNotExceedMaxSize(t *testing.T) {
 	// Enqueue them all
 	log.Println("Enqueueing test entries...")
 	for _, logEntry := range testLogEntries {
-		batchLogger.Enqueue(logEntry)
+		go batchLogger.Enqueue(logEntry)
 	}
 
 	// Keep reading until we've seen all the log entries
