@@ -54,7 +54,7 @@ func TestOldLogIsSentImmediately(t *testing.T) {
 }
 
 func TestBatchesDoNotExceedMaxSize(t *testing.T) {
-	f, err := os.Create("TestBatchesDoNotExceedMaxSizeAsync.prof")
+	f, err := os.Create("TestBatchesDoNotExceedMaxSize.prof")
 	if err != nil {
 		log.Fatal(err)
 	}
