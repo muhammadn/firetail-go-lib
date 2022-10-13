@@ -2,6 +2,7 @@ package logging
 
 import (
 	"encoding/json"
+	"log"
 	"math/rand"
 	"strings"
 	"testing"
@@ -55,10 +56,12 @@ func TestBatchesDoNotExceedMaxSize(t *testing.T) {
 	const MaxBatchSize = 1024 * 512 // 512KB in Bytes
 
 	// Buffer our batchChannel with TestLogEntryCount spaces (worst case, each entry ends up in its own batch)
+	log.Printf("Setting up logger with MaxBatchSize of %d...\n", MaxBatchSize)
 	batchChannel := make(chan *[][]byte, TestLogEntryCount)
 	batchLogger := SetupLogger(batchChannel, MaxBatchSize, time.Second)
 
 	// Create a bunch of test entries
+	log.Printf("Creating %d test entries...\n", TestLogEntryCount)
 	testLogEntries := []*LogEntry{}
 	for i := 0; i < TestLogEntryCount; i++ {
 		testLogEntries = append(
@@ -90,11 +93,13 @@ func TestBatchesDoNotExceedMaxSize(t *testing.T) {
 	}
 
 	// Enqueue them all
+	log.Println("Enqueueing test entries...")
 	for _, logEntry := range testLogEntries {
 		batchLogger.Enqueue(logEntry)
 	}
 
 	// Keep reading until we've seen all the log entries
+	log.Println("Receiving batches...")
 	logEntriesReceived := 0
 	for logEntriesReceived < TestLogEntryCount {
 		batch := <-batchChannel
@@ -106,11 +111,14 @@ func TestBatchesDoNotExceedMaxSize(t *testing.T) {
 			batchSize += len(logBytes)
 		}
 
+		log.Printf("Received batch of len %d and size %d\n", logEntriesReceived, batchSize)
+
 		// No batch should ever be bigger than the MaxBatchSize
 		assert.GreaterOrEqual(t, MaxBatchSize, batchSize)
 	}
 
 	// We should receive exactly the same number of log entries as we put in
+	log.Printf("Received %d entries\n", logEntriesReceived)
 	assert.Equal(t, TestLogEntryCount, logEntriesReceived)
 
 	// There should also be no batches left
