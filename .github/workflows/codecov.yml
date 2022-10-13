@@ -17,6 +17,10 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run coverage
         run: docker run --rm -v ${{ github.workspace }}:/src -w /src golang:${{ matrix.go-image }} go test ./... -race -coverprofile coverage.out -covermode atomic -v
+      - uses: actions/upload-artifact@v3
+        with:
+          name: TestBatchesDoNotExceedMaxSize.prof
+          path: logging/TestBatchesDoNotExceedMaxSize.prof
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
