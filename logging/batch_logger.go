@@ -117,6 +117,7 @@ func (l *batchLogger) worker() {
 			}
 		}
 
+		// Give the CPU some time to do other things :)
 		time.Sleep(1)
 	}
 }
