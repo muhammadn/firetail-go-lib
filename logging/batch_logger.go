@@ -116,5 +116,7 @@ func (l *batchLogger) worker() {
 				overflowEntryBytes = nil
 			}
 		}
+
+		time.Sleep(1)
 	}
 }
