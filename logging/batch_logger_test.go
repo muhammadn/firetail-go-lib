@@ -2,6 +2,7 @@ package logging
 
 import (
 	"encoding/json"
+	"log"
 	"math/rand"
 	"strings"
 	"testing"
@@ -90,9 +91,12 @@ func TestBatchesDoNotExceedMaxSize(t *testing.T) {
 	}
 
 	// Enqueue them all
-	for _, logEntry := range testLogEntries {
-		go batchLogger.Enqueue(logEntry)
+	log.Println("Enqueueing log entries...")
+	for i, logEntry := range testLogEntries {
+		log.Printf("Enqueuing log entry (%d)...\n", i)
+		batchLogger.Enqueue(logEntry)
 	}
+	log.Println("Finished enqueueing!")
 
 	// Keep reading until we've seen all the log entries
 	logEntriesReceived := 0
