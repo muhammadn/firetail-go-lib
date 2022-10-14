@@ -24,7 +24,7 @@ func main() {
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/plain")
-		w.Write([]byte("hello world"))
+		w.Write([]byte("I'm Healthy! :)"))
 	})
 
 	http.ListenAndServe(":3333", r)
