@@ -23,6 +23,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text/plain")
 		w.Write([]byte("hello world"))
 	})
 
