@@ -14,10 +14,38 @@ paths:
               schema:
                 type: string
                 enum: ["I'm Healthy! :)"]
-        '500':
-          description: Status of the server
+  /auth-example:
+    get:
+      summary: An example endpoint with various types of auth applied
+      security:
+        - BasicAuth: []
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Success
           content:
             text/plain:
               schema:
                 type: string
-                enum: ["I'm Unhealthy! :("]
+                enum: ["You're in! :)"]
+        '401':
+          description: Unauthorized
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum: ["401 - Unauthorised"]
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+    BearerAuth:            # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+      bearerFormat: JWT 
