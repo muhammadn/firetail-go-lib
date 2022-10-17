@@ -20,8 +20,11 @@ func main() {
 				// TODO
 				return errors.New("BasicAuth is not implemented yet")
 			case "ApiKeyAuth":
-				// TODO
-				return errors.New("ApiKeyAuth is not implemented yet")
+				token := ai.RequestValidationInput.Request.Header.Get("X-Api-Key")
+				if token != "example-api-key" {
+					return errors.New("invalid API key")
+				}
+				return nil
 			case "BearerAuth":
 				token := ai.RequestValidationInput.Request.Header.Get("Authorization")
 				if token != "bearer example-token" {
