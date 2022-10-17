@@ -1,6 +1,10 @@
 package firetail
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/getkin/kin-openapi/openapi3"
+)
 
 type ValidationTarget string
 
@@ -18,6 +22,16 @@ type ValidationError struct {
 
 func (e *ValidationError) Error() string {
 	return fmt.Sprintf("validation failed on %s: %s", e.Target, e.Reason)
+}
+
+// A SecurityRequirementsError should return a 401 error to the client
+type SecurityRequirementsError struct {
+	SecurityRequirements openapi3.SecurityRequirements
+	Errors               []error
+}
+
+func (e *SecurityRequirementsError) Error() string {
+	return fmt.Sprintf("security requirements were not met")
 }
 
 // A ContentTypeError should return a 415 error to the client
