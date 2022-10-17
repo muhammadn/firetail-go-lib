@@ -129,6 +129,9 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				Request:    r,
 				PathParams: pathParams,
 				Route:      route,
+				Options: &openapi3filter.Options{
+					AuthenticationFunc: options.AuthenticationFunc,
+				},
 			}
 			err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 			if err != nil {
