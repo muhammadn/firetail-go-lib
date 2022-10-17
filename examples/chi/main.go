@@ -27,5 +27,10 @@ func main() {
 		w.Write([]byte("I'm Healthy! :)"))
 	})
 
+	r.Get("/auth-example", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text/plain")
+		w.Write([]byte("You're in! :)"))
+	})
+
 	http.ListenAndServe(":3333", r)
 }
