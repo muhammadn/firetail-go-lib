@@ -80,6 +80,9 @@ func (o *Options) setDefaults() {
 					w.WriteHeader(500)
 					w.Write([]byte("500 (Internal Server Error): " + err.Error()))
 				}
+			} else if _, isSecurityRequirementsErr := err.(*SecurityRequirementsError); isSecurityRequirementsErr {
+				w.WriteHeader(401)
+				w.Write([]byte("401 (Unauthorized): " + err.Error()))
 			} else if _, isPathNotFoundErr := err.(*RouteNotFoundError); isPathNotFoundErr {
 				w.WriteHeader(404)
 				w.Write([]byte("404 (Not Found): " + err.Error()))
