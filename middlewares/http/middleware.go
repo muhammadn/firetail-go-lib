@@ -135,6 +135,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 			err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 			if err != nil {
+				// If the validation fails due to an unsupported content type, we pass a ContentTypeError to the ErrHandler
 				if err, isRequestErr := err.(*openapi3filter.RequestError); isRequestErr {
 					if strings.Contains(err.Reason, "header Content-Type has unexpected value") {
 						options.ErrHandler(
@@ -143,6 +144,20 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 						return
 					}
 				}
+
+				// If the validation fails due to a security requirement, we pass a SecurityRequirementsError to the ErrHandler
+				if err, isSecurityErr := err.(*openapi3filter.SecurityRequirementsError); isSecurityErr {
+					options.ErrHandler(
+						&SecurityRequirementsError{
+							SecurityRequirements: err.SecurityRequirements,
+							Errors:               err.Errors,
+						},
+						localResponseWriter,
+					)
+					return
+				}
+
+				// Else, we just use a non-specific ValidationError error
 				options.ErrHandler(&ValidationError{Request, err.Error()}, localResponseWriter)
 				return
 			}
