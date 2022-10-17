@@ -23,6 +23,11 @@ type Options struct {
 	// openapi spec, to be consistent with the format in which the rest of your application returns error responses
 	ErrHandler func(error, http.ResponseWriter)
 
+	// AuthenticationFunc is a callback func which must be defined if you wish to use security schemas in your openapi specification. See
+	// the openapi3filter package's reference for further documentation, and the Chi example for a demonstration of various auth types in use:
+	// https://github.com/FireTail-io/firetail-go-lib/tree/main/examples/chi
+	AuthenticationFunc openapi3filter.AuthenticationFunc
+
 	// DisableValidation is an optional flag which, if set to true, disables request & response validation
 	DisableValidation bool
 
