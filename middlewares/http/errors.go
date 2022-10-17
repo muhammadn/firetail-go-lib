@@ -34,13 +34,13 @@ func (e *SecurityRequirementsError) Error() string {
 	return fmt.Sprintf("security requirements were not met")
 }
 
-// A ContentTypeError should return a 415 error to the client
-type ContentTypeError struct {
-	Actual string
+// A RouteNotFoundError should return a 404 error to the client
+type RouteNotFoundError struct {
+	RequestPath string
 }
 
-func (e *ContentTypeError) Error() string {
-	return fmt.Sprintf("content type '%s' is not supported on this route", e.Actual)
+func (e *RouteNotFoundError) Error() string {
+	return fmt.Sprintf("request made to %s but did not match any routes", e.RequestPath)
 }
 
 // A MethodNotAllowedError should return a 405 error to the client
@@ -52,11 +52,11 @@ func (e *MethodNotAllowedError) Error() string {
 	return fmt.Sprintf("%s method is not supported on this route", e.RequestMethod)
 }
 
-// A RouteNotFoundError should return a 404 error to the client
-type RouteNotFoundError struct {
-	RequestPath string
+// A ContentTypeError should return a 415 error to the client
+type ContentTypeError struct {
+	Actual string
 }
 
-func (e *RouteNotFoundError) Error() string {
-	return fmt.Sprintf("request made to %s but did not match any routes", e.RequestPath)
+func (e *ContentTypeError) Error() string {
+	return fmt.Sprintf("content type '%s' is not supported on this route", e.Actual)
 }
