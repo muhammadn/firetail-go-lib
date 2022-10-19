@@ -12,10 +12,13 @@ import (
 )
 
 func SetupLogger(batchChannel chan *[][]byte, maxBatchSize int, maxLogAge time.Duration) *batchLogger {
-	batchLogger := NewBatchLogger(maxBatchSize, maxLogAge, "")
+	batchLogger := NewBatchLogger(BatchLoggerOptions{
+		MaxBatchSize: maxBatchSize,
+		MaxLogAge:    maxLogAge,
+	})
 
 	// Replace the batchHandler with a custom one to throw the batches into a queue that we can receive from for testing
-	batchLogger.batchHandler = func(b [][]byte) error {
+	batchLogger.batchCallback = func(b [][]byte) error {
 		batchChannel <- &b
 		return nil
 	}
