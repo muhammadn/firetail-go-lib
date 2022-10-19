@@ -1,7 +1,7 @@
 package logging
 
 // DefaultSanitiserOptions is an options struct for the default sanitiser provided with Firetail.
-type DefaultSanitiserOptions struct {
+type SanitiserOptions struct {
 	// RequestHeadersMask is a map of header names (lower cased) to HeaderMask values, which can be used to control the request headers reported to Firetail
 	RequestHeadersMask map[string]HeaderMask
 
@@ -25,7 +25,26 @@ type DefaultSanitiserOptions struct {
 	ResponseSanitisationCallback func(string) string
 }
 
-func GetDefaultSanitiser(options DefaultSanitiserOptions) func(LogEntry) LogEntry {
+func DefaultSanitiser() func(LogEntry) LogEntry {
+	// TODO: Create sensible defaults here.
+	return GetSanitiser(SanitiserOptions{})
+}
+
+func GetSanitiser(options SanitiserOptions) func(LogEntry) LogEntry {
+	// Fill in zero values for nil options
+	if options.RequestHeadersMask == nil {
+		options.RequestHeadersMask = map[string]HeaderMask{}
+	}
+	if options.ResponseHeadersMask == nil {
+		options.RequestHeadersMask = map[string]HeaderMask{}
+	}
+	if options.RequestSanitisationCallback == nil {
+		options.RequestSanitisationCallback = func(s string) string { return s }
+	}
+	if options.ResponseSanitisationCallback == nil {
+		options.ResponseSanitisationCallback = func(s string) string { return s }
+	}
+
 	return func(logEntry LogEntry) LogEntry {
 		// If there's a request headers or response headers mask, apply them...
 		if options.RequestHeadersMask != nil {

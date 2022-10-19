@@ -80,16 +80,6 @@ func (o *Options) setDefaults() {
 	}
 
 	if o.LogEntrySanitiser == nil {
-		o.LogEntrySanitiser = logging.GetDefaultSanitiser(
-			// TODO: Create sensible defaults here.
-			logging.DefaultSanitiserOptions{
-				RequestHeadersMask:           map[string]logging.HeaderMask{"authorization": logging.RedactJWTSignature},
-				RequestHeadersMaskStrict:     false,
-				ResponseHeadersMask:          map[string]logging.HeaderMask{},
-				ResponseHeadersMaskStrict:    false,
-				RequestSanitisationCallback:  func(s string) string { return s },
-				ResponseSanitisationCallback: func(s string) string { return s },
-			},
-		)
+		o.LogEntrySanitiser = logging.DefaultSanitiser()
 	}
 }
