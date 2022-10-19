@@ -92,7 +92,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Read in the request body so we can log it & replace r.Body with a new copy for the next http.Handler to read from
 			requestBody, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				options.ErrHandler(err, localResponseWriter)
+				options.ErrCallback(err, localResponseWriter)
 				return
 			}
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
@@ -103,13 +103,13 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Check there's a corresponding route for this request
 			route, pathParams, err := router.FindRoute(r)
 			if err == routers.ErrMethodNotAllowed {
-				options.ErrHandler(&MethodNotAllowedError{RequestMethod: r.Method}, localResponseWriter)
+				options.ErrCallback(&MethodNotAllowedError{RequestMethod: r.Method}, localResponseWriter)
 				return
 			} else if err == routers.ErrPathNotFound {
-				options.ErrHandler(&RouteNotFoundError{r.URL.Path}, localResponseWriter)
+				options.ErrCallback(&RouteNotFoundError{r.URL.Path}, localResponseWriter)
 				return
 			} else if err != nil {
-				options.ErrHandler(err, localResponseWriter)
+				options.ErrCallback(err, localResponseWriter)
 				return
 			}
 
@@ -135,19 +135,19 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 			err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 			if err != nil {
-				// If the validation fails due to an unsupported content type, we pass a ContentTypeError to the ErrHandler
+				// If the validation fails due to an unsupported content type, we pass a ContentTypeError to the ErrCallback
 				if err, isRequestErr := err.(*openapi3filter.RequestError); isRequestErr {
 					if strings.Contains(err.Reason, "header Content-Type has unexpected value") {
-						options.ErrHandler(
+						options.ErrCallback(
 							&ContentTypeError{r.Header.Get("Content-Type")}, localResponseWriter,
 						)
 						return
 					}
 				}
 
-				// If the validation fails due to a security requirement, we pass a SecurityRequirementsError to the ErrHandler
+				// If the validation fails due to a security requirement, we pass a SecurityRequirementsError to the ErrCallback
 				if err, isSecurityErr := err.(*openapi3filter.SecurityRequirementsError); isSecurityErr {
-					options.ErrHandler(
+					options.ErrCallback(
 						&SecurityRequirementsError{
 							SecurityRequirements: err.SecurityRequirements,
 							Errors:               err.Errors,
@@ -158,7 +158,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				}
 
 				// Else, we just use a non-specific ValidationError error
-				options.ErrHandler(&ValidationError{Request, err.Error()}, localResponseWriter)
+				options.ErrCallback(&ValidationError{Request, err.Error()}, localResponseWriter)
 				return
 			}
 
@@ -183,13 +183,13 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 			responseBytes, err := ioutil.ReadAll(chainResponseWriter.Result().Body)
 			if err != nil {
-				options.ErrHandler(&ValidationError{Response, err.Error()}, localResponseWriter)
+				options.ErrCallback(&ValidationError{Response, err.Error()}, localResponseWriter)
 				return
 			}
 			responseValidationInput.SetBodyBytes(responseBytes)
 			err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
 			if err != nil {
-				options.ErrHandler(&ValidationError{Response, err.Error()}, localResponseWriter)
+				options.ErrCallback(&ValidationError{Response, err.Error()}, localResponseWriter)
 				return
 			}
 

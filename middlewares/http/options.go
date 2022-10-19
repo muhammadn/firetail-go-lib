@@ -22,10 +22,10 @@ type Options struct {
 	// TODO
 	// LogBatchCallback func([][]byte) error
 
-	// ErrHandler is an optional callback func which is given an error and a ResponseWriter to which an apropriate response can be written
+	// ErrCallback is an optional callback func which is given an error and a ResponseWriter to which an apropriate response can be written
 	// for the error. This allows you customise the responses given, when for example a request or response fails to validate against the
 	// openapi spec, to be consistent with the format in which the rest of your application returns error responses
-	ErrHandler func(error, http.ResponseWriter)
+	ErrCallback func(error, http.ResponseWriter)
 
 	// AuthenticationFunc is a callback func which must be defined if you wish to use security schemas in your openapi specification. See
 	// the openapi3filter package's reference for further documentation, and the Chi example for a demonstration of various auth types in use:
@@ -63,8 +63,8 @@ type Options struct {
 }
 
 func (o *Options) setDefaults() {
-	if o.ErrHandler == nil {
-		o.ErrHandler = func(err error, w http.ResponseWriter) {
+	if o.ErrCallback == nil {
+		o.ErrCallback = func(err error, w http.ResponseWriter) {
 			w.Header().Add("Content-Type", "text/plain")
 			if validationErr, isValidationErr := err.(*ValidationError); isValidationErr {
 				switch validationErr.Target {
@@ -89,7 +89,7 @@ func (o *Options) setDefaults() {
 				w.WriteHeader(415)
 				w.Write([]byte("415 (Unsupported Media Type): " + err.Error()))
 			} else {
-				// Even if the err is nil, we return a 500, as defaultErrHandler should never be called with a nil err
+				// Even if the err is nil, we return a 500, as defaultErrCallback should never be called with a nil err
 				w.WriteHeader(500)
 				w.Write([]byte("500 (Internal Server Error): " + err.Error()))
 			}
