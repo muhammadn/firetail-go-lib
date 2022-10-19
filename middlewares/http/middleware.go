@@ -43,7 +43,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 	// Create a batchLogger to pass all our log entries to
 	// TODO: change max log age to a minute
-	batchLogger := logging.NewBatchLogger(1024*512, time.Second, options.FiretailEndpoint)
+	batchLogger := logging.NewBatchLogger(1024*512, time.Second, options.LoggingApiKey)
 
 	middleware := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

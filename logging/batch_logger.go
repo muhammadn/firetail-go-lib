@@ -15,7 +15,7 @@ type batchLogger struct {
 }
 
 // NewBatchLogger creates a new batchLogger with the provided maxBatchSize and maxLogAge, and a batchHandler which will send batches to the provided loggingEndpoint
-func NewBatchLogger(maxBatchSize int, maxLogAge time.Duration, loggingEndpoint string) *batchLogger {
+func NewBatchLogger(maxBatchSize int, maxLogAge time.Duration, loggingApiKey string) *batchLogger {
 	newLogger := &batchLogger{
 		queue:        make(chan *LogEntry),
 		maxBatchSize: maxBatchSize,
@@ -24,7 +24,7 @@ func NewBatchLogger(maxBatchSize int, maxLogAge time.Duration, loggingEndpoint s
 
 	newLogger.batchHandler = func(batchBytes [][]byte) error {
 		// TODO: send to Firetail. If there's an err, we should re-queue
-		log.Printf("Sending %d log(s) to '%s'...", len(batchBytes), loggingEndpoint)
+		log.Printf("Sending %d log(s) using API key '%s'...", len(batchBytes), loggingApiKey)
 		for i, entry := range batchBytes {
 			log.Printf("Entry #%d: %s\n", i, string(entry))
 		}

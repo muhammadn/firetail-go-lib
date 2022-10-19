@@ -13,6 +13,10 @@ type Options struct {
 	// SpecPath is the path at which your openapi spec can be found
 	SpecPath string
 
+	// LoggingApiKey is the API key which will be used when sending logs to the Firetail logging API. This value should typically be loaded
+	// in from an environment variable.
+	LoggingApiKey string
+
 	// SourceIPCallback is an optional callback func which takes the http.Request and returns the source IP of the request as a string,
 	// allowing you to, for example, handle cases where your service is running behind a proxy and needs to extract the source IP from
 	// the request headers instead
@@ -56,9 +60,6 @@ type Options struct {
 
 	// ResponseHeadersMaskStrict is an optional flag which, if set to true, will configure the Firetail middleware to only report response headers explicitly described in the ResponseHeadersMask
 	ResponseHeadersMaskStrict bool
-
-	// FiretailEndpoint is the Firetail logging endpoint request data should be sent to
-	FiretailEndpoint string
 }
 
 func (o *Options) setDefaults() {
@@ -82,6 +83,7 @@ func (o *Options) setDefaults() {
 				}
 			} else if _, isSecurityRequirementsErr := err.(*SecurityRequirementsError); isSecurityRequirementsErr {
 				w.WriteHeader(401)
+				w.Header().Add("WWW-Authenticate", "Basic realm=\"User Visible Realm\"")
 				w.Write([]byte("401 (Unauthorized): " + err.Error()))
 			} else if _, isPathNotFoundErr := err.(*RouteNotFoundError); isPathNotFoundErr {
 				w.WriteHeader(404)
