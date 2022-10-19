@@ -9,10 +9,10 @@ import (
 
 func TestStrictUnsetIsRemoved(t *testing.T) {
 	headersMask := map[string]HeaderMask{
-		"Test-Header": UnsetHeader,
+		"test-header": UnsetHeader,
 	}
 	unmaskedHeaders := map[string][]string{
-		"Test-Header": {"test-value"},
+		"test-header": {"test-value"},
 	}
 
 	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, true)
@@ -22,10 +22,10 @@ func TestStrictUnsetIsRemoved(t *testing.T) {
 
 func TestNonStrictUnsetIsPreserved(t *testing.T) {
 	headersMask := map[string]HeaderMask{
-		"Test-Header": UnsetHeader,
+		"test-header": UnsetHeader,
 	}
 	unmaskedHeaders := map[string][]string{
-		"Test-Header": {"test-value"},
+		"test-header": {"test-value"},
 	}
 
 	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
@@ -35,10 +35,10 @@ func TestNonStrictUnsetIsPreserved(t *testing.T) {
 
 func TestPreserveHeaderIsPreserved(t *testing.T) {
 	headersMask := map[string]HeaderMask{
-		"Test-Header": PreserveHeader,
+		"test-header": PreserveHeader,
 	}
 	unmaskedHeaders := map[string][]string{
-		"Test-Header": {"test-value"},
+		"test-header": {"test-value"},
 	}
 
 	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, true)
@@ -48,10 +48,10 @@ func TestPreserveHeaderIsPreserved(t *testing.T) {
 
 func TestRemoveHeaderIsRemoved(t *testing.T) {
 	headersMask := map[string]HeaderMask{
-		"Test-Header": RemoveHeader,
+		"test-header": RemoveHeader,
 	}
 	unmaskedHeaders := map[string][]string{
-		"Test-Header": {"test-value"},
+		"test-header": {"test-value"},
 	}
 
 	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
@@ -61,104 +61,104 @@ func TestRemoveHeaderIsRemoved(t *testing.T) {
 
 func TestRemoveHeaderValuesRemovesValues(t *testing.T) {
 	headersMask := map[string]HeaderMask{
-		"Test-Header": RemoveHeaderValues,
+		"test-header": RemoveHeaderValues,
 	}
 	unmaskedHeaders := map[string][]string{
-		"Test-Header": {"test-value"},
+		"test-header": {"test-value"},
 	}
 
 	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
-	assert.Empty(t, maskedHeaders["Test-Header"])
+	assert.Empty(t, maskedHeaders["test-header"])
 }
 
 func TestHashHeaderValuesHashesValues(t *testing.T) {
 	headersMask := map[string]HeaderMask{
-		"Test-Header": HashHeaderValues,
+		"test-header": HashHeaderValues,
 	}
 	unmaskedHeaders := map[string][]string{
-		"Test-Header": {"test-value"},
+		"test-header": {"test-value"},
 	}
 
 	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
-	require.Contains(t, maskedHeaders, "Test-Header")
-	assert.Len(t, maskedHeaders["Test-Header"], 1)
+	require.Contains(t, maskedHeaders, "test-header")
+	assert.Len(t, maskedHeaders["test-header"], 1)
 	assert.Contains(
 		t,
-		maskedHeaders["Test-Header"],
+		maskedHeaders["test-header"],
 		"1382103331d56fa62a3f0b12388aad5cdb36389d",
 	)
 }
 
 func TestHashHeaderValuesHashesMultipleValues(t *testing.T) {
 	headersMask := map[string]HeaderMask{
-		"Test-Header": HashHeaderValues,
+		"test-header": HashHeaderValues,
 	}
 	unmaskedHeaders := map[string][]string{
-		"Test-Header": {"test-value-1", "test-value-2"},
+		"test-header": {"test-value-1", "test-value-2"},
 	}
 
 	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
-	require.Contains(t, maskedHeaders, "Test-Header")
-	assert.Len(t, maskedHeaders["Test-Header"], 2)
+	require.Contains(t, maskedHeaders, "test-header")
+	assert.Len(t, maskedHeaders["test-header"], 2)
 	assert.Contains(
 		t,
-		maskedHeaders["Test-Header"],
+		maskedHeaders["test-header"],
 		"30ecdd733caf1b69c94a4c905a419bf4053876e4",
 	)
 	assert.Contains(
 		t,
-		maskedHeaders["Test-Header"],
+		maskedHeaders["test-header"],
 		"5b75855d18cf0ce802922549e002373be4d0f6de",
 	)
 }
 
 func TestHashHeaderHashesHeader(t *testing.T) {
 	headersMask := map[string]HeaderMask{
-		"Test-Header": HashHeader,
+		"test-header": HashHeader,
 	}
 	unmaskedHeaders := map[string][]string{
-		"Test-Header": {"test-value"},
+		"test-header": {"test-value"},
 	}
 
 	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
-	require.Contains(t, maskedHeaders, "e611b81f6ddc182d400d28bac79d0aac581afeb8")
-	assert.Len(t, maskedHeaders["e611b81f6ddc182d400d28bac79d0aac581afeb8"], 1)
+	require.Contains(t, maskedHeaders, "ae2ad4d388518f06280f224718538ab4b6d4ba13")
+	assert.Len(t, maskedHeaders["ae2ad4d388518f06280f224718538ab4b6d4ba13"], 1)
 	assert.Contains(
 		t,
-		maskedHeaders["e611b81f6ddc182d400d28bac79d0aac581afeb8"],
+		maskedHeaders["ae2ad4d388518f06280f224718538ab4b6d4ba13"],
 		"1382103331d56fa62a3f0b12388aad5cdb36389d",
 	)
 }
 
 func TestHashHeaderHashesMultipleHeaders(t *testing.T) {
 	headersMask := map[string]HeaderMask{
-		"Test-Header-1": HashHeader,
-		"Test-Header-2": HashHeader,
+		"test-header-1": HashHeader,
+		"test-header-2": HashHeader,
 	}
 	unmaskedHeaders := map[string][]string{
-		"Test-Header-1": {"test-value"},
-		"Test-Header-2": {"test-value"},
+		"test-header-1": {"test-value"},
+		"test-header-2": {"test-value"},
 	}
 
 	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
 
 	assert.Len(t, maskedHeaders, 2)
 
-	require.Contains(t, maskedHeaders, "43890d9e7edd04b58cd7244d78b4e08823d2875a")
-	assert.Len(t, maskedHeaders["43890d9e7edd04b58cd7244d78b4e08823d2875a"], 1)
+	require.Contains(t, maskedHeaders, "c50b5cf22d879f3190720f425bd5724e554d1be5")
+	assert.Len(t, maskedHeaders["c50b5cf22d879f3190720f425bd5724e554d1be5"], 1)
 	assert.Contains(
-		t, maskedHeaders["43890d9e7edd04b58cd7244d78b4e08823d2875a"],
+		t, maskedHeaders["c50b5cf22d879f3190720f425bd5724e554d1be5"],
 		"1382103331d56fa62a3f0b12388aad5cdb36389d",
 	)
 
-	require.Contains(t, maskedHeaders, "e0e8917877aa1bb1c68839ff38612a7b1987647e")
-	assert.Len(t, maskedHeaders["e0e8917877aa1bb1c68839ff38612a7b1987647e"], 1)
+	require.Contains(t, maskedHeaders, "c65eb1fbd6f25c15e625cb08e356dfb04227663f")
+	assert.Len(t, maskedHeaders["c65eb1fbd6f25c15e625cb08e356dfb04227663f"], 1)
 	assert.Contains(
-		t, maskedHeaders["e0e8917877aa1bb1c68839ff38612a7b1987647e"],
+		t, maskedHeaders["c65eb1fbd6f25c15e625cb08e356dfb04227663f"],
 		"1382103331d56fa62a3f0b12388aad5cdb36389d",
 	)
 }
