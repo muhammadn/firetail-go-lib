@@ -17,8 +17,12 @@ func main() {
 		AuthenticationFunc: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 			switch ai.SecuritySchemeName {
 			case "BasicAuth":
-				// TODO
-				return errors.New("BasicAuth is not implemented yet")
+				token := ai.RequestValidationInput.Request.Header.Get("Authorization")
+				// b64 encoding of 'admin:password'
+				if token != "Basic YWRtaW46cGFzc3dvcmQ=" {
+					return errors.New("invalid authorization token")
+				}
+				return nil
 			case "ApiKeyAuth":
 				token := ai.RequestValidationInput.Request.Header.Get("X-Api-Key")
 				if token != "example-api-key" {
@@ -52,8 +56,8 @@ func main() {
 	})
 
 	r.Get("/auth-example", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "text/plain")
-		w.Write([]byte("You're in! :)"))
+		w.Header().Add("Content-Type", "application/json")
+		w.Write([]byte("{\"description\":\"I'm a response body!\",\"extra-thing\":\"beans\"}"))
 	})
 
 	http.ListenAndServe(":3333", r)
