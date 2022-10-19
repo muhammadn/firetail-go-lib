@@ -16,6 +16,12 @@ type Options struct {
 	// in from an environment variable.
 	LoggingApiKey string
 
+	// LotBatchCallback is an optional callback which is provided with a batch of Firetail log entries ready to be sent to Firetail. The
+	// default callback sends log entries to the Firetail logging API. It may be customised to, for example, additionally log the entries
+	// to a file on disk. If it returns a non-nil error, the batch will be retried later.
+	// TODO
+	// LogBatchCallback func([][]byte) error
+
 	// ErrHandler is an optional callback func which is given an error and a ResponseWriter to which an apropriate response can be written
 	// for the error. This allows you customise the responses given, when for example a request or response fails to validate against the
 	// openapi spec, to be consistent with the format in which the rest of your application returns error responses
