@@ -55,7 +55,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 					HTTPProtocol: logging.HTTPProtocol(r.Proto),
 					Headers:      logging.MaskHeaders(r.Header, *options.RequestHeadersMask, options.RequestHeadersMaskStrict),
 					Method:       logging.Method(r.Method),
-					IP:           options.SourceIPCallback(r),
+					IP:           strings.Split(r.RemoteAddr, ":")[0],
 				},
 			}
 			if r.TLS != nil {
