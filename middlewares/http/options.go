@@ -10,13 +10,13 @@ import (
 // Options is an options struct used when creating a Firetail middleware (GetMiddleware)
 type Options struct {
 	// SpecPath is the path at which your openapi spec can be found
-	SpecPath string
+	OpenapiSpecPath string
 
-	// LoggingApiKey is the API key which will be used when sending logs to the Firetail logging API. This value should typically be loaded
+	// LogApiKey is the API key which will be used when sending logs to the Firetail logging API. This value should typically be loaded
 	// in from an environment variable.
-	LoggingApiKey string
+	LogApiKey string
 
-	// LotBatchCallback is an optional callback which is provided with a batch of Firetail log entries ready to be sent to Firetail. The
+	// LogBatchCallback is an optional callback which is provided with a batch of Firetail log entries ready to be sent to Firetail. The
 	// default callback sends log entries to the Firetail logging API. It may be customised to, for example, additionally log the entries
 	// to a file on disk. If it returns a non-nil error, the batch will be retried later.
 	// TODO
@@ -30,7 +30,7 @@ type Options struct {
 	// AuthenticationFunc is a callback func which must be defined if you wish to use security schemas in your openapi specification. See
 	// the openapi3filter package's reference for further documentation, and the Chi example for a demonstration of various auth types in use:
 	// https://github.com/FireTail-io/firetail-go-lib/tree/main/examples/chi
-	AuthenticationFunc openapi3filter.AuthenticationFunc
+	AuthCallback openapi3filter.AuthenticationFunc
 
 	// DisableValidation is an optional flag which, if set to true, disables request & response validation
 	DisableValidation bool

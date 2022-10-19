@@ -30,7 +30,7 @@ var healthHandlerWithWrongResponseBody http.HandlerFunc = http.HandlerFunc(func(
 
 func TestValidRequestAndResponse(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		SpecPath: "./test-spec.yaml",
+		OpenapiSpecPath: "./test-spec.yaml",
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -57,21 +57,21 @@ func TestValidRequestAndResponse(t *testing.T) {
 
 func TestInvalidSpecPath(t *testing.T) {
 	_, err := GetMiddleware(&Options{
-		SpecPath: "./test-spec-not-here.yaml",
+		OpenapiSpecPath: "./test-spec-not-here.yaml",
 	})
 	require.IsType(t, &fs.PathError{}, err)
 }
 
 func TestInvalidSpec(t *testing.T) {
 	_, err := GetMiddleware(&Options{
-		SpecPath: "./test-spec-invalid.yaml",
+		OpenapiSpecPath: "./test-spec-invalid.yaml",
 	})
 	require.Equal(t, "invalid paths: a short description of the response is required", err.Error())
 }
 
 func TestRequestToInvalidRoute(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		SpecPath: "./test-spec.yaml",
+		OpenapiSpecPath: "./test-spec.yaml",
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -94,7 +94,7 @@ func TestRequestToInvalidRoute(t *testing.T) {
 
 func TestRequestWithDisallowedMethod(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		SpecPath: "./test-spec.yaml",
+		OpenapiSpecPath: "./test-spec.yaml",
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -117,7 +117,7 @@ func TestRequestWithDisallowedMethod(t *testing.T) {
 
 func TestRequestWithInvalidBody(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		SpecPath: "./test-spec.yaml",
+		OpenapiSpecPath: "./test-spec.yaml",
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -144,7 +144,7 @@ func TestRequestWithInvalidBody(t *testing.T) {
 
 func TestInvalidResponseBody(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		SpecPath: "./test-spec.yaml",
+		OpenapiSpecPath: "./test-spec.yaml",
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandlerWithWrongResponseBody)
@@ -175,7 +175,7 @@ func TestInvalidResponseBody(t *testing.T) {
 
 func TestDisabledRequestValidation(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		SpecPath:          "./test-spec.yaml",
+		OpenapiSpecPath:   "./test-spec.yaml",
 		DisableValidation: true,
 	})
 	require.Nil(t, err)
@@ -203,7 +203,7 @@ func TestDisabledRequestValidation(t *testing.T) {
 
 func TestDisabledResponseValidation(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		SpecPath:          "./test-spec.yaml",
+		OpenapiSpecPath:   "./test-spec.yaml",
 		DisableValidation: true,
 	})
 	require.Nil(t, err)
@@ -231,7 +231,7 @@ func TestDisabledResponseValidation(t *testing.T) {
 
 func TestUnexpectedContentType(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		SpecPath: "./test-spec.yaml",
+		OpenapiSpecPath: "./test-spec.yaml",
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -258,7 +258,7 @@ func TestUnexpectedContentType(t *testing.T) {
 
 func TestCustomXMLDecoder(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		SpecPath: "./test-spec.yaml",
+		OpenapiSpecPath: "./test-spec.yaml",
 		CustomBodyDecoders: map[string]openapi3filter.BodyDecoder{
 			"application/xml": func(r io.Reader, h http.Header, sr *openapi3.SchemaRef, ef openapi3filter.EncodingFn) (interface{}, error) {
 				decoder := xml2map.NewDecoder(r)

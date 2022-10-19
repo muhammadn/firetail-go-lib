@@ -23,7 +23,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 	// Load in our appspec, validate it & create a router from it.
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
-	doc, err := loader.LoadFromFile(options.SpecPath)
+	doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 	// Create a batchLogger to pass all our log entries to
 	// TODO: change max log age to a minute
-	batchLogger := logging.NewBatchLogger(1024*512, time.Second, options.LoggingApiKey)
+	batchLogger := logging.NewBatchLogger(1024*512, time.Second, options.LogApiKey)
 
 	middleware := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +130,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				PathParams: pathParams,
 				Route:      route,
 				Options: &openapi3filter.Options{
-					AuthenticationFunc: options.AuthenticationFunc,
+					AuthenticationFunc: options.AuthCallback,
 				},
 			}
 			err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
