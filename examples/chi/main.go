@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	firetail "github.com/FireTail-io/firetail-go-lib/middlewares/http"
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -30,8 +31,8 @@ func main() {
 				}
 				return nil
 			case "BearerAuth":
-				token := ai.RequestValidationInput.Request.Header.Get("Authorization")
-				if token != "bearer example-token" {
+				tokenParts := strings.Split(ai.RequestValidationInput.Request.Header.Get("Authorization"), " ")
+				if len(tokenParts) < 2 || tokenParts[1] != "header.payload.signature" {
 					return errors.New("invalid bearer token")
 				}
 				return nil
