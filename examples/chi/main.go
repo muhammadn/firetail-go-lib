@@ -56,8 +56,8 @@ func main() {
 	})
 
 	r.Get("/auth-example", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
-		w.Write([]byte("{\"description\":\"I'm a response body!\",\"extra-thing\":\"beans\"}"))
+		w.Header().Add("Content-Type", "text/plain")
+		w.Write([]byte("You're in! :)"))
 	})
 
 	http.ListenAndServe(":3333", r)
