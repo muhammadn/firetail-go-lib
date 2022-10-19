@@ -3,6 +3,9 @@ package logging
 import (
 	"crypto"
 	"fmt"
+	"log"
+	"regexp"
+	"strings"
 )
 
 type HeaderMask int
@@ -25,6 +28,9 @@ const (
 
 	// Both the header's name and value will be hashed before being reported to Firetail
 	HashHeader
+
+	// Any of the header's values which match against a JWT pattern are removed
+	RedactJWTSignature
 )
 
 func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]HeaderMask, isStrict bool) map[string][]string {
@@ -32,7 +38,7 @@ func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]Hea
 
 	headerNameHashFails := 0
 	for headerName, headerValues := range unmaskedHeaders {
-		mask := headersMask[headerName]
+		mask := headersMask[strings.ToLower(headerName)]
 
 		switch mask {
 		case UnsetHeader:
@@ -68,7 +74,28 @@ func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]Hea
 			}
 			maskedHeaders[hashedHeaderName] = hashValues(headerValues)
 			break
+
+		case RedactJWTSignature:
+			for i, value := range headerValues {
+				isJWT, _ := regexp.MatchString(
+					"[Bb]earer [A-Za-z0-9-_]*.[A-Za-z0-9-_]*.[A-Za-z0-9-_]*",
+					value,
+				)
+				log.Println("isJWT", isJWT, headerName, value)
+				if !isJWT {
+					continue
+				}
+				headerValues[i] = strings.Join(
+					// Indexing [:2] here should not fail as the regex completed earlier should guarantee that we have
+					// two '.' characters, so `strings.Split(value, ".")` should return a slice containing three elements
+					strings.Split(value, ".")[:2],
+					".",
+				)
+			}
+			maskedHeaders[headerName] = headerValues
+			break
 		}
+
 	}
 
 	return maskedHeaders
