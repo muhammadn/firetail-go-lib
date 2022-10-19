@@ -53,7 +53,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				DateCreated: time.Now().UnixMilli(),
 				Request: logging.Request{
 					HTTPProtocol: logging.HTTPProtocol(r.Proto),
-					Headers:      logging.MaskHeaders(r.Header, *options.RequestHeadersMask, options.RequestHeadersMaskStrict),
+					Headers:      r.Header,
 					Method:       logging.Method(r.Method),
 					IP:           strings.Split(r.RemoteAddr, ":")[0],
 				},
@@ -71,13 +71,13 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			defer func() {
 				logEntry.Response = logging.Response{
 					StatusCode: int64(localResponseWriter.Code),
-					Body:       options.ResponseSanitisationCallback(localResponseWriter.Body.Bytes()),
-					Headers: logging.MaskHeaders(
-						localResponseWriter.Result().Header,
-						*options.ResponseHeadersMask,
-						options.ResponseHeadersMaskStrict,
-					),
+					Body:       string(localResponseWriter.Body.Bytes()),
+					Headers:    localResponseWriter.Result().Header,
 				}
+
+				// Remember to sanitise the log entry before enqueueing it!
+				logEntry = options.LogEntrySanitiser(logEntry)
+
 				batchLogger.Enqueue(&logEntry)
 
 				for key, vals := range localResponseWriter.HeaderMap {
@@ -98,7 +98,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 
 			// Now we have the request body, we can fill it into our log entry
-			logEntry.Request.Body = options.RequestSanitisationCallback(requestBody)
+			logEntry.Request.Body = string(requestBody)
 
 			// Check there's a corresponding route for this request
 			route, pathParams, err := router.FindRoute(r)

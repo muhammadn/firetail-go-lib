@@ -39,27 +39,10 @@ type Options struct {
 	// Content-Type by default, you will need to add a custom decoder here.
 	CustomBodyDecoders map[string]openapi3filter.BodyDecoder
 
-	// RequestSanitisationCallback is an optional callback which is given the request body as bytes & returns a stringified request body which
-	// is then logged to Firetail. This is useful for writing custom logic to redact any sensitive data from your request bodies before it is logged
-	// in Firetail.
-	RequestSanitisationCallback func([]byte) string
-
-	// RequestHeadersMask is a map of header names to HeaderMask values, which can be used to control the request headers reported to Firetail
-	RequestHeadersMask *map[string]logging.HeaderMask
-
-	// RequestHeadersMaskStrict is an optional flag which, if set to true, will configure the Firetail middleware to only report request headers explicitly described in the RequestHeadersMask
-	RequestHeadersMaskStrict bool
-
-	// ResponseSanitisationCallback is an optional callback which is given the response body as bytes & returns a stringified response body which
-	// is then logged to Firetail. This is useful for writing custom logic to redact any sensitive data from your response bodies before it is logged
-	// in Firetail.
-	ResponseSanitisationCallback func([]byte) string
-
-	// ResponseHeadersMask is a map of header names to HeaderMask values, which can be used to control the response headers reported to Firetail
-	ResponseHeadersMask *map[string]logging.HeaderMask
-
-	// ResponseHeadersMaskStrict is an optional flag which, if set to true, will configure the Firetail middleware to only report response headers explicitly described in the ResponseHeadersMask
-	ResponseHeadersMaskStrict bool
+	// LogEntrySanitiser is a function used to sanitise the log entries sent to Firetail. You may wish to use this to redact sensitive
+	// information, or anonymise identifiable information using a custom implementation of this callback for your application. A default
+	// implementation is provided in the firetail logging package.
+	LogEntrySanitiser func(logging.LogEntry) logging.LogEntry
 }
 
 func (o *Options) setDefaults() {
@@ -96,25 +79,17 @@ func (o *Options) setDefaults() {
 		}
 	}
 
-	if o.RequestSanitisationCallback == nil {
-		o.RequestSanitisationCallback = func(b []byte) string {
-			return string(b)
-		}
-	}
-
-	if o.RequestHeadersMask == nil {
-		// TODO: create default
-		o.RequestHeadersMask = &map[string]logging.HeaderMask{}
-	}
-
-	if o.ResponseSanitisationCallback == nil {
-		o.ResponseSanitisationCallback = func(b []byte) string {
-			return string(b)
-		}
-	}
-
-	if o.ResponseHeadersMask == nil {
-		// TODO: create default
-		o.ResponseHeadersMask = &map[string]logging.HeaderMask{}
+	if o.LogEntrySanitiser == nil {
+		o.LogEntrySanitiser = logging.GetDefaultSanitiser(
+			// TODO: Create sensible defaults here.
+			logging.DefaultSanitiserOptions{
+				RequestHeadersMask:           map[string]logging.HeaderMask{"authorization": logging.RedactJWTSignature},
+				RequestHeadersMaskStrict:     false,
+				ResponseHeadersMask:          map[string]logging.HeaderMask{},
+				ResponseHeadersMaskStrict:    false,
+				RequestSanitisationCallback:  func(s string) string { return s },
+				ResponseSanitisationCallback: func(s string) string { return s },
+			},
+		)
 	}
 }
