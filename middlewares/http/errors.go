@@ -12,7 +12,7 @@ type ErrorInvalidConfiguration struct {
 }
 
 func (e ErrorInvalidConfiguration) Error() string {
-	return fmt.Sprintf("invalid configuration, err: %s", e.Err.Error())
+	return fmt.Sprintf("invalid configuration: %s", e.Err.Error())
 }
 
 // ErrorAppspecInvalid is used at initialisation/startup when the OpenAPI appspec file is malformed

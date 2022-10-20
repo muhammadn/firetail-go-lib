@@ -59,7 +59,7 @@ func TestInvalidSpecPath(t *testing.T) {
 		OpenapiSpecPath: "./test-spec-not-here.yaml",
 	})
 	require.IsType(t, ErrorInvalidConfiguration{}, err)
-	require.Equal(t, "invalid configuration, err: open ./test-spec-not-here.yaml: no such file or directory", err.Error())
+	require.Equal(t, "invalid configuration: open ./test-spec-not-here.yaml: no such file or directory", err.Error())
 }
 
 func TestInvalidSpec(t *testing.T) {
