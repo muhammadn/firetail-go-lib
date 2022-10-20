@@ -48,33 +48,18 @@ func (o *Options) setDefaults() {
 	if o.ErrCallback == nil {
 		o.ErrCallback = func(err error, w http.ResponseWriter) {
 			w.Header().Add("Content-Type", "text/plain")
-			if validationErr, isValidationErr := err.(*ValidationError); isValidationErr {
-				switch validationErr.Target {
-				case Request:
-					w.WriteHeader(400)
-					w.Write([]byte("400 (Bad Request): " + err.Error()))
-				case Response:
-					w.WriteHeader(500)
-					w.Write([]byte("500 (Internal Server Error): " + err.Error()))
-				}
-			} else if _, isSecurityRequirementsErr := err.(*SecurityRequirementsError); isSecurityRequirementsErr {
-				w.WriteHeader(401)
-				w.Header().Add("WWW-Authenticate", "Basic realm=\"User Visible Realm\"")
-				w.Write([]byte("401 (Unauthorized): " + err.Error()))
-			} else if _, isPathNotFoundErr := err.(*RouteNotFoundError); isPathNotFoundErr {
-				w.WriteHeader(404)
-				w.Write([]byte("404 (Not Found): " + err.Error()))
-			} else if _, isMethodNotAllowedErr := err.(*MethodNotAllowedError); isMethodNotAllowedErr {
-				w.WriteHeader(405)
-				w.Write([]byte("405 (Method Not Allowed): " + err.Error()))
-			} else if _, isContentTypeErr := err.(*ContentTypeError); isContentTypeErr {
-				w.WriteHeader(415)
-				w.Write([]byte("415 (Unsupported Media Type): " + err.Error()))
-			} else {
-				// Even if the err is nil, we return a 500, as defaultErrCallback should never be called with a nil err
+
+			// ErrCallback should currently only receive firetail errors that satisfy the ErrorAtRequest interface.
+			errorAtRequest, isErrorAtRequest := err.(ErrorAtRequest)
+
+			if !isErrorAtRequest {
 				w.WriteHeader(500)
 				w.Write([]byte("500 (Internal Server Error): " + err.Error()))
+				return
 			}
+
+			w.WriteHeader(errorAtRequest.StatusCode())
+			w.Write([]byte(errorAtRequest.Error()))
 		}
 	}
 
