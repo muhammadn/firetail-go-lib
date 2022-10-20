@@ -127,7 +127,7 @@ func (e ErrorRequestBodyInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestBodyInvalid) Error() string {
-	return fmt.Sprintf("response body invalid, reason: %s", e.Reason)
+	return e.Reason
 }
 
 // ErrorAuthNoMatchingSchema is used when a request doesn't satisfy any of the securitySchemes corresponding to the route that the request matched in the OpenAPI spec
@@ -166,7 +166,7 @@ func (e ErrorResponseBodyInvalid) StatusCode() int {
 }
 
 func (e ErrorResponseBodyInvalid) Error() string {
-	return fmt.Sprintf("response body invalid, reason: %s", e.Reason)
+	return e.Reason
 }
 
 // ErrorResponseStatusCodeInvalid is used when the status code of a response doesn't conform to the schema in the OpenAPI spec
