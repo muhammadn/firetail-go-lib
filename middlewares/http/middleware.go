@@ -107,7 +107,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Check there's a corresponding route for this request
 			route, pathParams, err := router.FindRoute(r)
 			if err == routers.ErrMethodNotAllowed {
-				options.ErrCallback(ErrorUnsupportedMethod{route.Path, r.Method}, localResponseWriter)
+				options.ErrCallback(ErrorUnsupportedMethod{r.URL.Path, r.Method}, localResponseWriter)
 				return
 			} else if err == routers.ErrPathNotFound {
 				options.ErrCallback(ErrorRouteNotFound{r.URL.Path}, localResponseWriter)
@@ -142,9 +142,12 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				// If the validation fails due to an unsupported content type, we pass a ContentTypeError to the ErrCallback
 				if err, isRequestErr := err.(*openapi3filter.RequestError); isRequestErr {
 					if strings.Contains(err.Reason, "header Content-Type has unexpected value") {
-						options.ErrCallback(
-							ErrorRequestContentTypeInvalid{r.Header.Get("Content-Type"), route.Path}, localResponseWriter,
-						)
+						options.ErrCallback(ErrorRequestContentTypeInvalid{r.Header.Get("Content-Type"), route.Path}, localResponseWriter)
+						return
+					}
+
+					if strings.Contains(err.Reason, "doesn't match the schema") {
+						options.ErrCallback(ErrorRequestBodyInvalid{err.Error()}, localResponseWriter)
 						return
 					}
 				}
@@ -196,6 +199,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 				if responseError.Reason == "response body doesn't match the schema" {
 					options.ErrCallback(ErrorResponseBodyInvalid{responseError.Error()}, localResponseWriter)
+					return
 				}
 			}
 

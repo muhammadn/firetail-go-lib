@@ -51,7 +51,7 @@ func (e ErrorRouteNotFound) Error() string {
 // ErrorUnsupportedMethod is used when a request is made which corresponds to a route in the OpenAPI spec, but that route
 // doesn't support the HTTP method with which the request was made
 type ErrorUnsupportedMethod struct {
-	RequestedRoute  string // The route that corresponds to the path that was requested for which the method is not supported
+	RequestedPath   string // The route that corresponds to the path that was requested for which the method is not supported
 	RequestedMethod string // The method which was requested but is not supported on the route corresponding to the request path
 }
 
@@ -60,7 +60,7 @@ func (e ErrorUnsupportedMethod) StatusCode() int {
 }
 
 func (e ErrorUnsupportedMethod) Error() string {
-	return fmt.Sprintf("%s route does not support %s method", e.RequestedRoute, e.RequestedMethod)
+	return fmt.Sprintf("%s does not support %s method", e.RequestedPath, e.RequestedMethod)
 }
 
 // ErrorRequestHeadersInvalid is used when any of the headers of a request don't conform to the schema in the OpenAPI spec, except
