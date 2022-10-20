@@ -89,7 +89,7 @@ func TestRequestToInvalidRoute(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "404 (Not Found): request made to /not-implemented but did not match any routes", string(respBody))
+	assert.Equal(t, "no matching route found for request path /not-implemented", string(respBody))
 }
 
 func TestRequestWithDisallowedMethod(t *testing.T) {
@@ -112,7 +112,7 @@ func TestRequestWithDisallowedMethod(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "405 (Method Not Allowed): GET method is not supported on this route", string(respBody))
+	assert.Equal(t, "/implemented does not support GET method", string(respBody))
 }
 
 func TestRequestWithInvalidBody(t *testing.T) {
@@ -139,7 +139,11 @@ func TestRequestWithInvalidBody(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "400 (Bad Request): validation failed on request: request body has an error: doesn't match the schema: Error at \"/description\": property \"description\" is missing\nSchema:\n  {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"description\": {\n        \"enum\": [\n          \"test description\"\n        ],\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"description\"\n    ],\n    \"type\": \"object\"\n  }\n\nValue:\n  {}\n", string(respBody))
+	assert.Equal(
+		t,
+		"request body has an error: doesn't match the schema: Error at \"/description\": property \"description\" is missing\nSchema:\n  {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"description\": {\n        \"enum\": [\n          \"test description\"\n        ],\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"description\"\n    ],\n    \"type\": \"object\"\n  }\n\nValue:\n  {}\n",
+		string(respBody),
+	)
 }
 
 func TestInvalidResponseBody(t *testing.T) {
@@ -168,7 +172,7 @@ func TestInvalidResponseBody(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"500 (Internal Server Error): validation failed on response: response body doesn't match the schema: Error at \"/description\": value is not one of the allowed values\nSchema:\n  {\n    \"enum\": [\n      \"test description\"\n    ],\n    \"type\": \"string\"\n  }\n\nValue:\n  \"another test description\"\n",
+		"response body doesn't match the schema: Error at \"/description\": value is not one of the allowed values\nSchema:\n  {\n    \"enum\": [\n      \"test description\"\n    ],\n    \"type\": \"string\"\n  }\n\nValue:\n  \"another test description\"\n",
 		string(respBody),
 	)
 }
@@ -253,7 +257,7 @@ func TestUnexpectedContentType(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "415 (Unsupported Media Type): content type 'text/plain' is not supported on this route", string(respBody))
+	assert.Equal(t, "/implemented route does not support content type text/plain", string(respBody))
 }
 
 func TestCustomXMLDecoder(t *testing.T) {
