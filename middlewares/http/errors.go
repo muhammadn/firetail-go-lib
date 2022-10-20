@@ -88,7 +88,7 @@ func (e ErrorRequestContentTypeInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestContentTypeInvalid) Error() string {
-	return fmt.Sprintf("%s route does not support %s method", e.RequestedRoute, e.RequestedContentType)
+	return fmt.Sprintf("%s route does not support content type %s", e.RequestedRoute, e.RequestedContentType)
 }
 
 // ErrorRequestQueryParamsInvalid is used when the query params of a request don't conform to the schema in the OpenAPI spec
