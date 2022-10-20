@@ -189,7 +189,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 			responseBytes, err := ioutil.ReadAll(chainResponseWriter.Result().Body)
 			if err != nil {
-				options.ErrCallback(ErrorResponseBodyInvalid{"failed to read response bytes"}, localResponseWriter)
+				options.ErrCallback(ErrorResponseBodyInvalid{err}, localResponseWriter)
 				return
 			}
 			responseValidationInput.SetBodyBytes(responseBytes)
@@ -203,7 +203,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				}
 
 				if responseError.Reason == "response body doesn't match the schema" {
-					options.ErrCallback(ErrorResponseBodyInvalid{responseError.Error()}, localResponseWriter)
+					options.ErrCallback(ErrorResponseBodyInvalid{responseError}, localResponseWriter)
 					return
 				}
 			}

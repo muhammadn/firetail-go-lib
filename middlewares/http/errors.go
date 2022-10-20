@@ -117,7 +117,7 @@ func (e ErrorRequestPathParamsInvalid) Error() string {
 
 // ErrorRequestBodyInvalid is used when the body of a request doesn't conform to the schema in the OpenAPI spec
 type ErrorRequestBodyInvalid struct {
-	Reason string
+	Err error
 }
 
 func (e ErrorRequestBodyInvalid) StatusCode() int {
@@ -125,7 +125,7 @@ func (e ErrorRequestBodyInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestBodyInvalid) Error() string {
-	return e.Reason
+	return e.Err.Error()
 }
 
 // ErrorAuthNoMatchingSchema is used when a request doesn't satisfy any of the securitySchemes corresponding to the route that the request matched in the OpenAPI spec
@@ -156,7 +156,7 @@ func (e ErrorResponseHeadersInvalid) Error() string {
 
 // ErrorResponseHeadersInvalid is used when the body of a response doesn't conform to the schema in the OpenAPI spec
 type ErrorResponseBodyInvalid struct {
-	Reason string
+	Err error
 }
 
 func (e ErrorResponseBodyInvalid) StatusCode() int {
@@ -164,7 +164,7 @@ func (e ErrorResponseBodyInvalid) StatusCode() int {
 }
 
 func (e ErrorResponseBodyInvalid) Error() string {
-	return e.Reason
+	return e.Err.Error()
 }
 
 // ErrorResponseStatusCodeInvalid is used when the status code of a response doesn't conform to the schema in the OpenAPI spec
