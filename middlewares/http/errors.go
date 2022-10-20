@@ -17,12 +17,11 @@ func (e ErrorInvalidConfiguration) Error() string {
 
 // ErrorAppspecInvalid is used at initialisation/startup when the OpenAPI appspec file is malformed
 type ErrorAppspecInvalid struct {
-	Reason error // The error that occurred during initialisation of the middleware due to the appspec being invalid
+	Err error // The error that occurred during initialisation of the middleware due to the appspec being invalid
 }
 
 func (e ErrorAppspecInvalid) Error() string {
-	// TODO
-	return "ErrorAppspecInvalid"
+	return fmt.Sprintf("invalid appspec: %s", e.Err.Error())
 }
 
 // ErrorAtRequest is an interface that extends the standard error interface for errors that occur during the handling of a request.

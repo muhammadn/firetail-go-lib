@@ -29,7 +29,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	}
 	err = doc.Validate(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, ErrorAppspecInvalid{err}
 	}
 	router, err := gorillamux.NewRouter(doc)
 	if err != nil {

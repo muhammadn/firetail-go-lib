@@ -66,7 +66,8 @@ func TestInvalidSpec(t *testing.T) {
 	_, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec-invalid.yaml",
 	})
-	require.Equal(t, "invalid paths: a short description of the response is required", err.Error())
+	require.IsType(t, ErrorAppspecInvalid{}, err)
+	require.Equal(t, "invalid appspec: invalid paths: a short description of the response is required", err.Error())
 }
 
 func TestRequestToInvalidRoute(t *testing.T) {
