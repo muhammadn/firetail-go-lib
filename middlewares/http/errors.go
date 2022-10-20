@@ -64,6 +64,7 @@ func (e ErrorUnsupportedMethod) Error() string {
 // ErrorRequestHeadersInvalid is used when any of the headers of a request don't conform to the schema in the OpenAPI spec, except
 // for the Content-Type header for which an ErrorRequestContentTypeInvalid is used
 type ErrorRequestHeadersInvalid struct {
+	Err error
 }
 
 func (e ErrorRequestHeadersInvalid) StatusCode() int {
@@ -71,8 +72,7 @@ func (e ErrorRequestHeadersInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestHeadersInvalid) Error() string {
-	// TODO
-	return "ErrorRequestHeadersInvalid"
+	return e.Err.Error()
 }
 
 // ErrorRequestHeadersInvalid is used when the Content-Type header of a request doesn't conform to the schema in the OpenAPI spec

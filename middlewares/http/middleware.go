@@ -139,15 +139,20 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 			err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 			if err != nil {
-				// If the validation fails due to an unsupported content type, we pass a ContentTypeError to the ErrCallback
+				// If the err is an openapi3filter RequestError, we can extract more information from the err...
 				if err, isRequestErr := err.(*openapi3filter.RequestError); isRequestErr {
+					// TODO: Using strings.Contains is janky here and may break - should replace with something more reliable
+					// See the following open issue on the kin-openapi repo: https://github.com/getkin/kin-openapi/issues/477
 					if strings.Contains(err.Reason, "header Content-Type has unexpected value") {
 						options.ErrCallback(ErrorRequestContentTypeInvalid{r.Header.Get("Content-Type"), route.Path}, localResponseWriter)
 						return
 					}
-
 					if strings.Contains(err.Reason, "doesn't match the schema") {
-						options.ErrCallback(ErrorRequestBodyInvalid{err.Error()}, localResponseWriter)
+						options.ErrCallback(ErrorRequestBodyInvalid{err}, localResponseWriter)
+						return
+					}
+					if strings.Contains(err.Error(), "header has an error") {
+						options.ErrCallback(ErrorRequestHeadersInvalid{err}, localResponseWriter)
 						return
 					}
 				}
@@ -159,7 +164,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				}
 
 				// Else, we just use a non-specific ValidationError error
-				options.ErrCallback(ErrorRequestBodyInvalid{"unknown"}, localResponseWriter)
+				options.ErrCallback(err, localResponseWriter)
 				return
 			}
 

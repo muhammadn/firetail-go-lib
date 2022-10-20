@@ -5,6 +5,11 @@ info:
 paths:
   /implemented:
     post:
+      parameters:
+         - in: header
+           name: X-Test-Header
+           schema:
+            type: number
       requestBody:
         description: A test JSON object
         required: true
