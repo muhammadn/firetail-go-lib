@@ -58,8 +58,8 @@ func TestInvalidSpecPath(t *testing.T) {
 	_, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec-not-here.yaml",
 	})
-	require.IsType(t, ErrorAppspecNotFound{}, err)
-	require.Equal(t, "appspec could not be found at ./test-spec-not-here.yaml", err.Error())
+	require.IsType(t, ErrorInvalidConfiguration{}, err)
+	require.Equal(t, "invalid configuration, err: open ./test-spec-not-here.yaml: no such file or directory", err.Error())
 }
 
 func TestInvalidSpec(t *testing.T) {

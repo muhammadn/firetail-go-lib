@@ -6,14 +6,13 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-// ErrorAppspecNotFound is used at initialisation/startup when the OpenAPI appspec file the library has been configured to use cannot be found
-type ErrorAppspecNotFound struct {
-	ProvidedPath string // The path that was used to attempt to load the appspec
+// InvalidConfiguration is used by middleware constructors if the configuration they are provided is invalid for some reason
+type ErrorInvalidConfiguration struct {
+	Err error // The path that was used to attempt to load the appspec
 }
 
-func (e ErrorAppspecNotFound) Error() string {
-	// TODO
-	return "ErrorAppspecNotFound"
+func (e ErrorInvalidConfiguration) Error() string {
+	return fmt.Sprintf("invalid configuration, err: %s", e.Err.Error())
 }
 
 // ErrorAppspecInvalid is used at initialisation/startup when the OpenAPI appspec file is malformed

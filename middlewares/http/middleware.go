@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/fs"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -25,10 +24,8 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	// Load in our appspec, validate it & create a router from it.
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
 	doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
-	if _, isPathErr := err.(*fs.PathError); isPathErr {
-		return nil, ErrorAppspecNotFound{options.OpenapiSpecPath}
-	} else if err != nil {
-		return nil, err
+	if err != nil {
+		return nil, ErrorInvalidConfiguration{err}
 	}
 	err = doc.Validate(context.Background())
 	if err != nil {
