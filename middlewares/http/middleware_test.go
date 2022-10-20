@@ -3,7 +3,6 @@ package firetail
 import (
 	"bytes"
 	"io"
-	"io/fs"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -59,7 +58,8 @@ func TestInvalidSpecPath(t *testing.T) {
 	_, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec-not-here.yaml",
 	})
-	require.IsType(t, &fs.PathError{}, err)
+	require.IsType(t, ErrorAppspecNotFound{}, err)
+	require.Equal(t, "appspec could not be found at ./test-spec-not-here.yaml", err.Error())
 }
 
 func TestInvalidSpec(t *testing.T) {
