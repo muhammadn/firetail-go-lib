@@ -72,7 +72,7 @@ func (e ErrorRequestHeadersInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestHeadersInvalid) Error() string {
-	return e.Err.Error()
+	return fmt.Sprintf("request headers invalid: %s", e.Err.Error())
 }
 
 // ErrorRequestHeadersInvalid is used when the Content-Type header of a request doesn't conform to the schema in the OpenAPI spec
@@ -125,7 +125,7 @@ func (e ErrorRequestBodyInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestBodyInvalid) Error() string {
-	return e.Err.Error()
+	return fmt.Sprintf("request body invalid: %s", e.Err.Error())
 }
 
 // ErrorAuthNoMatchingSchema is used when a request doesn't satisfy any of the securitySchemes corresponding to the route that the request matched in the OpenAPI spec
@@ -164,7 +164,7 @@ func (e ErrorResponseBodyInvalid) StatusCode() int {
 }
 
 func (e ErrorResponseBodyInvalid) Error() string {
-	return e.Err.Error()
+	return fmt.Sprintf("response body invalid: %s", e.Err.Error())
 }
 
 // ErrorResponseStatusCodeInvalid is used when the status code of a response doesn't conform to the schema in the OpenAPI spec

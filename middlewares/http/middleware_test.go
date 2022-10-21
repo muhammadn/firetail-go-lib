@@ -143,7 +143,7 @@ func TestRequestWithInvalidHeader(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"parameter \"X-Test-Header\" in header has an error: value invalid: an invalid number: invalid syntax",
+		"request headers invalid: parameter \"X-Test-Header\" in header has an error: value invalid: an invalid number: invalid syntax",
 		string(respBody),
 	)
 }
@@ -174,7 +174,7 @@ func TestRequestWithInvalidBody(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request body has an error: doesn't match the schema: Error at \"/description\": property \"description\" is missing\nSchema:\n  {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"description\": {\n        \"enum\": [\n          \"test description\"\n        ],\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"description\"\n    ],\n    \"type\": \"object\"\n  }\n\nValue:\n  {}\n",
+		"request body invalid: request body has an error: doesn't match the schema: Error at \"/description\": property \"description\" is missing\nSchema:\n  {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"description\": {\n        \"enum\": [\n          \"test description\"\n        ],\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"description\"\n    ],\n    \"type\": \"object\"\n  }\n\nValue:\n  {}\n",
 		string(respBody),
 	)
 }
@@ -205,7 +205,7 @@ func TestInvalidResponseBody(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"response body doesn't match the schema: Error at \"/description\": value is not one of the allowed values\nSchema:\n  {\n    \"enum\": [\n      \"test description\"\n    ],\n    \"type\": \"string\"\n  }\n\nValue:\n  \"another test description\"\n",
+		"response body invalid: response body doesn't match the schema: Error at \"/description\": value is not one of the allowed values\nSchema:\n  {\n    \"enum\": [\n      \"test description\"\n    ],\n    \"type\": \"string\"\n  }\n\nValue:\n  \"another test description\"\n",
 		string(respBody),
 	)
 }
