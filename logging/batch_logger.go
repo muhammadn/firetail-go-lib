@@ -87,11 +87,12 @@ func (l *batchLogger) worker() {
 			// Marshal the entry to bytes...
 			entryBytes, err := json.Marshal(newEntry)
 			if err != nil {
-				panic(err)
+				// TODO: log that we're skipping this entry?
+				continue
 			}
 
 			if len(entryBytes) > l.maxBatchSize {
-				// TODO: panic?
+				// TODO: log that we're skipping this entry?
 				continue
 			}
 
