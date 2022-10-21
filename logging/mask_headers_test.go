@@ -162,3 +162,69 @@ func TestHashHeaderHashesMultipleHeaders(t *testing.T) {
 		"1382103331d56fa62a3f0b12388aad5cdb36389d",
 	)
 }
+
+func TestRedactJWTSignatureRedactsJWTSignature(t *testing.T) {
+	headersMask := map[string]HeaderMask{
+		"test-header": RedactJWTSignature,
+	}
+	unmaskedHeaders := map[string][]string{
+		"test-header": {"bearer header.payload.signature"},
+	}
+
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
+
+	require.Contains(t, maskedHeaders, "test-header")
+	assert.Len(t, maskedHeaders["test-header"], 1)
+	assert.Contains(
+		t,
+		maskedHeaders["test-header"],
+		"bearer header.payload",
+	)
+}
+
+func TestRedactJWTSignatureRetainsNonJWTValue(t *testing.T) {
+	headersMask := map[string]HeaderMask{
+		"test-header": RedactJWTSignature,
+	}
+	unmaskedHeaders := map[string][]string{
+		"test-header": {"test-value"},
+	}
+
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
+
+	require.Contains(t, maskedHeaders, "test-header")
+	assert.Len(t, maskedHeaders["test-header"], 1)
+	assert.Contains(
+		t,
+		maskedHeaders["test-header"],
+		"test-value",
+	)
+}
+
+func TestRedactJWTSignatureHandlesMultipleValues(t *testing.T) {
+	headersMask := map[string]HeaderMask{
+		"test-header-1": RedactJWTSignature,
+		"test-header-2": RedactJWTSignature,
+		"test-header-3": RedactJWTSignature,
+	}
+	unmaskedHeaders := map[string][]string{
+		"test-header-1": {"test-value", "bearer header.payload.signature"},
+		"test-header-2": {"test-value"},
+		"test-header-3": {"bearer header.payload.signature"},
+	}
+
+	maskedHeaders := MaskHeaders(unmaskedHeaders, headersMask, false)
+
+	require.Contains(t, maskedHeaders, "test-header-1")
+	assert.Len(t, maskedHeaders["test-header-1"], 2)
+	assert.Contains(t, maskedHeaders["test-header-1"], "test-value")
+	assert.Contains(t, maskedHeaders["test-header-1"], "bearer header.payload")
+
+	require.Contains(t, maskedHeaders, "test-header-2")
+	assert.Len(t, maskedHeaders["test-header-2"], 1)
+	assert.Contains(t, maskedHeaders["test-header-2"], "test-value")
+
+	require.Contains(t, maskedHeaders, "test-header-3")
+	assert.Len(t, maskedHeaders["test-header-3"], 1)
+	assert.Contains(t, maskedHeaders["test-header-3"], "bearer header.payload")
+}
