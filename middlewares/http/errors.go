@@ -171,6 +171,7 @@ func (e ErrorResponseBodyInvalid) Error() string {
 
 // ErrorResponseStatusCodeInvalid is used when the status code of a response doesn't conform to the schema in the OpenAPI spec
 type ErrorResponseStatusCodeInvalid struct {
+	RespondedStatusCode int
 }
 
 func (e ErrorResponseStatusCodeInvalid) StatusCode() int {
@@ -178,6 +179,5 @@ func (e ErrorResponseStatusCodeInvalid) StatusCode() int {
 }
 
 func (e ErrorResponseStatusCodeInvalid) Error() string {
-	// TODO
-	return "ErrorResponseStatusCodeInvalid"
+	return fmt.Sprintf("response status code invalid: %d", e.RespondedStatusCode)
 }

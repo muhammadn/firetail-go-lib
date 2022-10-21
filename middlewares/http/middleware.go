@@ -207,6 +207,9 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 					if responseError.Reason == "response body doesn't match the schema" {
 						options.ErrCallback(ErrorResponseBodyInvalid{responseError}, localResponseWriter)
 						return
+					} else if responseError.Reason == "status is not supported" {
+						options.ErrCallback(ErrorResponseStatusCodeInvalid{responseError.Input.Status}, localResponseWriter)
+						return
 					}
 				}
 				options.ErrCallback(err, localResponseWriter)

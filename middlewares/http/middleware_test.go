@@ -27,6 +27,12 @@ var healthHandlerWithWrongResponseBody http.HandlerFunc = http.HandlerFunc(func(
 	w.Write([]byte("{\"description\":\"another test description\"}"))
 })
 
+var healthHandlerWithWrongResponseCode http.HandlerFunc = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(201)
+	w.Header().Add("Content-Type", "application/json")
+	w.Write([]byte("{\"description\":\"another test description\"}"))
+})
+
 func TestValidRequestAndResponse(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
@@ -267,6 +273,37 @@ func TestInvalidResponseBody(t *testing.T) {
 	assert.Equal(
 		t,
 		"response body invalid: response body doesn't match the schema: Error at \"/description\": value is not one of the allowed values\nSchema:\n  {\n    \"enum\": [\n      \"test description\"\n    ],\n    \"type\": \"string\"\n  }\n\nValue:\n  \"another test description\"\n",
+		string(respBody),
+	)
+}
+
+func TestInvalidResponseCode(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		OpenapiSpecPath: "./test-spec.yaml",
+	})
+	require.Nil(t, err)
+	handler := middleware(healthHandlerWithWrongResponseCode)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented/1",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
+	)
+	request.Header.Add("Content-Type", "application/json")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 500, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "text/plain", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(
+		t,
+		"response status code invalid: 201",
 		string(respBody),
 	)
 }
