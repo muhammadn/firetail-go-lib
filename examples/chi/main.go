@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 
 	firetail "github.com/FireTail-io/firetail-go-lib/middlewares/http"
@@ -15,6 +16,7 @@ import (
 func main() {
 	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 		OpenapiSpecPath: "app-spec.yaml",
+		LogApiKey:       os.Getenv("firetail-api-key"),
 		AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 			switch ai.SecuritySchemeName {
 			case "BasicAuth":
