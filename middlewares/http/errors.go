@@ -99,11 +99,12 @@ func (e ErrorRequestQueryParamsInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestQueryParamsInvalid) Error() string {
-	return fmt.Sprintf("request query invalid: %s", e.Err.Error())
+	return fmt.Sprintf("request query parameter invalid: %s", e.Err.Error())
 }
 
 // ErrorRequestPathParamsInvalid is used when the path params of a request don't conform to the schema in the OpenAPI spec
 type ErrorRequestPathParamsInvalid struct {
+	Err error
 }
 
 func (e ErrorRequestPathParamsInvalid) StatusCode() int {
@@ -111,8 +112,7 @@ func (e ErrorRequestPathParamsInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestPathParamsInvalid) Error() string {
-	// TODO
-	return "ErrorRequestPathParamsInvalid"
+	return fmt.Sprintf("request path parameter invalid: %s", e.Err.Error())
 }
 
 // ErrorRequestBodyInvalid is used when the body of a request doesn't conform to the schema in the OpenAPI spec

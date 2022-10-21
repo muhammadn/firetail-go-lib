@@ -159,6 +159,10 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 						options.ErrCallback(ErrorRequestQueryParamsInvalid{err}, localResponseWriter)
 						return
 					}
+					if strings.Contains(err.Error(), "path has an error") {
+						options.ErrCallback(ErrorRequestPathParamsInvalid{err}, localResponseWriter)
+						return
+					}
 				}
 
 				// If the validation fails due to a security requirement, we pass a SecurityRequirementsError to the ErrCallback

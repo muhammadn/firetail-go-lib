@@ -3,9 +3,14 @@ info:
   title: Test Spec
   version: '0.1'
 paths:
-  /implemented:
+  /implemented/{testparam}:
     post:
       parameters:
+         - in: path
+           name: testparam
+           required: true
+           schema:
+            type: number
          - in: query
            name: test-param
            schema:

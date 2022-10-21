@@ -36,7 +36,7 @@ func TestValidRequestAndResponse(t *testing.T) {
 	responseRecorder := httptest.NewRecorder()
 
 	request := httptest.NewRequest(
-		"POST", "/implemented",
+		"POST", "/implemented/1",
 		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
 	)
 	request.Header.Add("Content-Type", "application/json")
@@ -101,7 +101,7 @@ func TestRequestWithDisallowedMethod(t *testing.T) {
 	handler := middleware(healthHandler)
 	responseRecorder := httptest.NewRecorder()
 
-	request := httptest.NewRequest("GET", "/implemented", nil)
+	request := httptest.NewRequest("GET", "/implemented/1", nil)
 	handler.ServeHTTP(responseRecorder, request)
 
 	assert.Equal(t, 405, responseRecorder.Code)
@@ -113,7 +113,7 @@ func TestRequestWithDisallowedMethod(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "/implemented does not support GET method", string(respBody))
+	assert.Equal(t, "/implemented/1 does not support GET method", string(respBody))
 }
 
 func TestRequestWithInvalidHeader(t *testing.T) {
@@ -125,7 +125,7 @@ func TestRequestWithInvalidHeader(t *testing.T) {
 	responseRecorder := httptest.NewRecorder()
 
 	request := httptest.NewRequest(
-		"POST", "/implemented",
+		"POST", "/implemented/1",
 		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
 	)
 	request.Header.Add("Content-Type", "application/json")
@@ -157,7 +157,7 @@ func TestRequestWithInvalidQueryParam(t *testing.T) {
 	responseRecorder := httptest.NewRecorder()
 
 	request := httptest.NewRequest(
-		"POST", "/implemented?test-param=invalid",
+		"POST", "/implemented/1?test-param=invalid",
 		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
 	)
 	request.Header.Add("Content-Type", "application/json")
@@ -174,7 +174,37 @@ func TestRequestWithInvalidQueryParam(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request query invalid: parameter \"test-param\" in query has an error: value invalid: an invalid number: invalid syntax",
+		"request query parameter invalid: parameter \"test-param\" in query has an error: value invalid: an invalid number: invalid syntax",
+		string(respBody),
+	)
+}
+
+func TestRequestWithInvalidPathParam(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		OpenapiSpecPath: "./test-spec.yaml",
+	})
+	handler := middleware(healthHandler)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented/invalid-path-param",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
+	)
+	request.Header.Add("Content-Type", "application/json")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 400, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "text/plain", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(
+		t,
+		"request path parameter invalid: parameter \"testparam\" in path has an error: value invalid-path-param: an invalid number: invalid syntax",
 		string(respBody),
 	)
 }
@@ -188,7 +218,7 @@ func TestRequestWithInvalidBody(t *testing.T) {
 	responseRecorder := httptest.NewRecorder()
 
 	request := httptest.NewRequest(
-		"POST", "/implemented",
+		"POST", "/implemented/1",
 		io.NopCloser(bytes.NewBuffer([]byte("{}"))),
 	)
 	request.Header.Add("Content-Type", "application/json")
@@ -219,7 +249,7 @@ func TestInvalidResponseBody(t *testing.T) {
 	responseRecorder := httptest.NewRecorder()
 
 	request := httptest.NewRequest(
-		"POST", "/implemented",
+		"POST", "/implemented/1",
 		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
 	)
 	request.Header.Add("Content-Type", "application/json")
@@ -251,7 +281,7 @@ func TestDisabledRequestValidation(t *testing.T) {
 	responseRecorder := httptest.NewRecorder()
 
 	request := httptest.NewRequest(
-		"POST", "/implemented",
+		"POST", "/implemented/1",
 		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"Another test JSON object\"}"))),
 	)
 	request.Header.Add("Content-Type", "application/json")
@@ -279,7 +309,7 @@ func TestDisabledResponseValidation(t *testing.T) {
 	responseRecorder := httptest.NewRecorder()
 
 	request := httptest.NewRequest(
-		"POST", "/implemented",
+		"POST", "/implemented/1",
 		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
 	)
 	request.Header.Add("Content-Type", "application/json")
@@ -306,7 +336,7 @@ func TestUnexpectedContentType(t *testing.T) {
 	responseRecorder := httptest.NewRecorder()
 
 	request := httptest.NewRequest(
-		"POST", "/implemented",
+		"POST", "/implemented/1",
 		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
 	)
 	request.Header.Add("Content-Type", "text/plain")
@@ -321,7 +351,7 @@ func TestUnexpectedContentType(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "/implemented route does not support content type text/plain", string(respBody))
+	assert.Equal(t, "/implemented/{testparam} route does not support content type text/plain", string(respBody))
 }
 
 func TestCustomXMLDecoder(t *testing.T) {
@@ -344,7 +374,7 @@ func TestCustomXMLDecoder(t *testing.T) {
 	responseRecorder := httptest.NewRecorder()
 
 	request := httptest.NewRequest(
-		"POST", "/implemented",
+		"POST", "/implemented/1",
 		io.NopCloser(bytes.NewBuffer([]byte("<description>test description</description>"))),
 	)
 	request.Header.Add("Content-Type", "application/xml")
