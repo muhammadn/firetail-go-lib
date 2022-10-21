@@ -27,13 +27,8 @@ type SanitiserOptions struct {
 
 func DefaultSanitiser() func(LogEntry) LogEntry {
 	// TODO: Create sensible defaults here.
-	return GetSanitiser(SanitiserOptions{})
-}
-
-func GetSanitiser(options SanitiserOptions) func(LogEntry) LogEntry {
-	// Fill in zero values for nil options
-	if options.RequestHeadersMask == nil {
-		options.RequestHeadersMask = map[string]HeaderMask{
+	return GetSanitiser(SanitiserOptions{
+		RequestHeadersMask: map[string]HeaderMask{
 			"set-cookie":    HashHeaderValues,
 			"cookie":        HashHeaderValues,
 			"authorization": HashHeaderValues,
@@ -41,7 +36,14 @@ func GetSanitiser(options SanitiserOptions) func(LogEntry) LogEntry {
 			"token":         HashHeaderValues,
 			"api-token":     HashHeaderValues,
 			"api-key":       HashHeaderValues,
-		}
+		},
+	})
+}
+
+func GetSanitiser(options SanitiserOptions) func(LogEntry) LogEntry {
+	// Fill in zero values for nil options
+	if options.RequestHeadersMask == nil {
+		options.ResponseHeadersMask = map[string]HeaderMask{}
 	}
 	if options.ResponseHeadersMask == nil {
 		options.ResponseHeadersMask = map[string]HeaderMask{}
