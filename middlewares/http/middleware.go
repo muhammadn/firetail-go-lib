@@ -147,7 +147,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 						options.ErrCallback(ErrorRequestContentTypeInvalid{r.Header.Get("Content-Type"), route.Path}, localResponseWriter)
 						return
 					}
-					if strings.Contains(err.Reason, "doesn't match the schema") {
+					if strings.Contains(err.Error(), "body has an error") {
 						options.ErrCallback(ErrorRequestBodyInvalid{err}, localResponseWriter)
 						return
 					}
