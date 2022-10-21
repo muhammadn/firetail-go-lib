@@ -25,11 +25,11 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
 	doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
 	if err != nil {
-		return nil, err
+		return nil, ErrorInvalidConfiguration{err}
 	}
 	err = doc.Validate(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, ErrorAppspecInvalid{err}
 	}
 	router, err := gorillamux.NewRouter(doc)
 	if err != nil {
@@ -107,10 +107,10 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Check there's a corresponding route for this request
 			route, pathParams, err := router.FindRoute(r)
 			if err == routers.ErrMethodNotAllowed {
-				options.ErrCallback(&MethodNotAllowedError{RequestMethod: r.Method}, localResponseWriter)
+				options.ErrCallback(ErrorUnsupportedMethod{r.URL.Path, r.Method}, localResponseWriter)
 				return
 			} else if err == routers.ErrPathNotFound {
-				options.ErrCallback(&RouteNotFoundError{r.URL.Path}, localResponseWriter)
+				options.ErrCallback(ErrorRouteNotFound{r.URL.Path}, localResponseWriter)
 				return
 			} else if err != nil {
 				options.ErrCallback(err, localResponseWriter)
@@ -139,30 +139,41 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 			err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
 			if err != nil {
-				// If the validation fails due to an unsupported content type, we pass a ContentTypeError to the ErrCallback
+				// If the err is an openapi3filter RequestError, we can extract more information from the err...
 				if err, isRequestErr := err.(*openapi3filter.RequestError); isRequestErr {
+					// TODO: Using strings.Contains is janky here and may break - should replace with something more reliable
+					// See the following open issue on the kin-openapi repo: https://github.com/getkin/kin-openapi/issues/477
+					// TODO: Open source contribution to kin-openapi?
 					if strings.Contains(err.Reason, "header Content-Type has unexpected value") {
-						options.ErrCallback(
-							&ContentTypeError{r.Header.Get("Content-Type")}, localResponseWriter,
-						)
+						options.ErrCallback(ErrorRequestContentTypeInvalid{r.Header.Get("Content-Type"), route.Path}, localResponseWriter)
+						return
+					}
+					if strings.Contains(err.Error(), "body has an error") {
+						options.ErrCallback(ErrorRequestBodyInvalid{err}, localResponseWriter)
+						return
+					}
+					if strings.Contains(err.Error(), "header has an error") {
+						options.ErrCallback(ErrorRequestHeadersInvalid{err}, localResponseWriter)
+						return
+					}
+					if strings.Contains(err.Error(), "query has an error") {
+						options.ErrCallback(ErrorRequestQueryParamsInvalid{err}, localResponseWriter)
+						return
+					}
+					if strings.Contains(err.Error(), "path has an error") {
+						options.ErrCallback(ErrorRequestPathParamsInvalid{err}, localResponseWriter)
 						return
 					}
 				}
 
 				// If the validation fails due to a security requirement, we pass a SecurityRequirementsError to the ErrCallback
 				if err, isSecurityErr := err.(*openapi3filter.SecurityRequirementsError); isSecurityErr {
-					options.ErrCallback(
-						&SecurityRequirementsError{
-							SecurityRequirements: err.SecurityRequirements,
-							Errors:               err.Errors,
-						},
-						localResponseWriter,
-					)
+					options.ErrCallback(ErrorAuthNoMatchingSchema{err.SecurityRequirements}, localResponseWriter)
 					return
 				}
 
 				// Else, we just use a non-specific ValidationError error
-				options.ErrCallback(&ValidationError{Request, err.Error()}, localResponseWriter)
+				options.ErrCallback(err, localResponseWriter)
 				return
 			}
 
@@ -187,13 +198,22 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			}
 			responseBytes, err := ioutil.ReadAll(chainResponseWriter.Result().Body)
 			if err != nil {
-				options.ErrCallback(&ValidationError{Response, err.Error()}, localResponseWriter)
+				options.ErrCallback(ErrorResponseBodyInvalid{err}, localResponseWriter)
 				return
 			}
 			responseValidationInput.SetBodyBytes(responseBytes)
 			err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
 			if err != nil {
-				options.ErrCallback(&ValidationError{Response, err.Error()}, localResponseWriter)
+				if responseError, isResponseError := err.(*openapi3filter.ResponseError); isResponseError {
+					if responseError.Reason == "response body doesn't match the schema" {
+						options.ErrCallback(ErrorResponseBodyInvalid{responseError}, localResponseWriter)
+						return
+					} else if responseError.Reason == "status is not supported" {
+						options.ErrCallback(ErrorResponseStatusCodeInvalid{responseError.Input.Status}, localResponseWriter)
+						return
+					}
+				}
+				options.ErrCallback(err, localResponseWriter)
 				return
 			}
 

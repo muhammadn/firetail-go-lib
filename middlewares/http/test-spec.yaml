@@ -3,8 +3,24 @@ info:
   title: Test Spec
   version: '0.1'
 paths:
-  /implemented:
+  /implemented/{testparam}:
     post:
+      security:
+        - ApiKeyAuth: []
+      parameters:
+         - in: path
+           name: testparam
+           required: true
+           schema:
+            type: number
+         - in: query
+           name: test-param
+           schema:
+            type: number
+         - in: header
+           name: X-Test-Header
+           schema:
+            type: number
       requestBody:
         description: A test JSON object
         required: true
@@ -23,6 +39,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/exampleDocument'
 components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
   schemas:
     exampleDocument:
       type: object
