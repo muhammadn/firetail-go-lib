@@ -13,7 +13,7 @@ func TestMarshalUnmarshalYieldsSameResult(t *testing.T) {
 		Request: Request{
 			Body: "this is a request body",
 			Headers: map[string][]string{
-				"Content-Type": []string{"text/plain"},
+				"Content-Type": {"text/plain"},
 			},
 			HTTPProtocol: HTTP2,
 			IP:           "8.8.8.8",
@@ -24,7 +24,7 @@ func TestMarshalUnmarshalYieldsSameResult(t *testing.T) {
 		Response: Response{
 			Body: "this is a response body",
 			Headers: map[string][]string{
-				"Content-Type": []string{"text/plain"},
+				"Content-Type": {"text/plain"},
 			},
 			StatusCode: 200,
 		},
