@@ -143,6 +143,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				if err, isRequestErr := err.(*openapi3filter.RequestError); isRequestErr {
 					// TODO: Using strings.Contains is janky here and may break - should replace with something more reliable
 					// See the following open issue on the kin-openapi repo: https://github.com/getkin/kin-openapi/issues/477
+					// TODO: Open source contribution to kin-openapi?
 					if strings.Contains(err.Reason, "header Content-Type has unexpected value") {
 						options.ErrCallback(ErrorRequestContentTypeInvalid{r.Header.Get("Content-Type"), route.Path}, localResponseWriter)
 						return

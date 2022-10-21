@@ -144,6 +144,7 @@ func (e ErrorAuthNoMatchingSchema) Error() string {
 // ErrorResponseHeadersInvalid is used when any of the headers of a response don't conform to the schema in the OpenAPI spec
 // Currently not implemented as the underlying kin-openapi module doesn't perform response header validation.
 // See the open issue here: https://github.com/getkin/kin-openapi/issues/201
+// TODO: Open source contribution to kin-openapi?
 type ErrorResponseHeadersInvalid struct {
 	Err error
 }
