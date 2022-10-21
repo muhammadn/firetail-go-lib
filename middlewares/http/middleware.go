@@ -203,17 +203,14 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			responseValidationInput.SetBodyBytes(responseBytes)
 			err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
 			if err != nil {
-				responseError, isResponseError := err.(*openapi3filter.ResponseError)
-
-				if !isResponseError {
-					options.ErrCallback(err, localResponseWriter)
-					return
+				if responseError, isResponseError := err.(*openapi3filter.ResponseError); isResponseError {
+					if responseError.Reason == "response body doesn't match the schema" {
+						options.ErrCallback(ErrorResponseBodyInvalid{responseError}, localResponseWriter)
+						return
+					}
 				}
-
-				if responseError.Reason == "response body doesn't match the schema" {
-					options.ErrCallback(ErrorResponseBodyInvalid{responseError}, localResponseWriter)
-					return
-				}
+				options.ErrCallback(err, localResponseWriter)
+				return
 			}
 
 			// If the response written down the chain passed the validation, we can write it to our localResponseWriter
