@@ -91,6 +91,7 @@ func (e ErrorRequestContentTypeInvalid) Error() string {
 
 // ErrorRequestQueryParamsInvalid is used when the query params of a request don't conform to the schema in the OpenAPI spec
 type ErrorRequestQueryParamsInvalid struct {
+	Err error
 }
 
 func (e ErrorRequestQueryParamsInvalid) StatusCode() int {
@@ -98,8 +99,7 @@ func (e ErrorRequestQueryParamsInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestQueryParamsInvalid) Error() string {
-	// TODO
-	return "ErrorRequestQueryParamsInvalid"
+	return fmt.Sprintf("request query invalid: %s", e.Err.Error())
 }
 
 // ErrorRequestPathParamsInvalid is used when the path params of a request don't conform to the schema in the OpenAPI spec

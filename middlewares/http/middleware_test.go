@@ -148,6 +148,37 @@ func TestRequestWithInvalidHeader(t *testing.T) {
 	)
 }
 
+func TestRequestWithInvalidQueryParam(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		OpenapiSpecPath: "./test-spec.yaml",
+	})
+	require.Nil(t, err)
+	handler := middleware(healthHandler)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented?test-param=invalid",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
+	)
+	request.Header.Add("Content-Type", "application/json")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 400, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "text/plain", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(
+		t,
+		"request query invalid: parameter \"test-param\" in query has an error: value invalid: an invalid number: invalid syntax",
+		string(respBody),
+	)
+}
+
 func TestRequestWithInvalidBody(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",

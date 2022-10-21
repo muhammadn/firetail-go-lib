@@ -6,6 +6,10 @@ paths:
   /implemented:
     post:
       parameters:
+         - in: query
+           name: test-param
+           schema:
+            type: number
          - in: header
            name: X-Test-Header
            schema:
