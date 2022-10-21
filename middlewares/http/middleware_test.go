@@ -2,6 +2,8 @@ package firetail
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -36,6 +38,7 @@ var healthHandlerWithWrongResponseCode http.HandlerFunc = http.HandlerFunc(func(
 func TestValidRequestAndResponse(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -79,6 +82,7 @@ func TestInvalidSpec(t *testing.T) {
 func TestRequestToInvalidRoute(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -102,6 +106,7 @@ func TestRequestToInvalidRoute(t *testing.T) {
 func TestRequestWithDisallowedMethod(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -125,6 +130,7 @@ func TestRequestWithDisallowedMethod(t *testing.T) {
 func TestRequestWithInvalidHeader(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -157,6 +163,7 @@ func TestRequestWithInvalidHeader(t *testing.T) {
 func TestRequestWithInvalidQueryParam(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -188,6 +195,7 @@ func TestRequestWithInvalidQueryParam(t *testing.T) {
 func TestRequestWithInvalidPathParam(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 	})
 	handler := middleware(healthHandler)
 	responseRecorder := httptest.NewRecorder()
@@ -218,6 +226,7 @@ func TestRequestWithInvalidPathParam(t *testing.T) {
 func TestRequestWithInvalidBody(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -246,9 +255,126 @@ func TestRequestWithInvalidBody(t *testing.T) {
 	)
 }
 
+func TestRequestWithValidAuth(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
+			token := ai.RequestValidationInput.Request.Header.Get("X-Api-Key")
+			if token != "valid-api-key" {
+				return errors.New("invalid API key")
+			}
+			return nil
+		},
+	})
+	require.Nil(t, err)
+	handler := middleware(healthHandler)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented/1",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
+	)
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("X-Api-Key", "valid-api-key")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 200, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "application/json", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(
+		t,
+		"{\"description\":\"test description\"}",
+		string(respBody),
+	)
+}
+
+func TestRequestWithMissingAuth(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
+			token := ai.RequestValidationInput.Request.Header.Get("X-Api-Key")
+			if token != "valid-api-key" {
+				return errors.New("invalid API key")
+			}
+			return nil
+		},
+	})
+	require.Nil(t, err)
+	handler := middleware(healthHandler)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented/1",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
+	)
+	request.Header.Add("Content-Type", "application/json")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 401, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "text/plain", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(
+		t,
+		"request did not satisfy any of the following security requirements: [map[ApiKeyAuth:[]]]",
+		string(respBody),
+	)
+}
+
+func TestRequestWithInvalidAuth(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
+			token := ai.RequestValidationInput.Request.Header.Get("X-Api-Key")
+			if token != "valid-api-key" {
+				return errors.New("invalid API key")
+			}
+			return nil
+		},
+	})
+	require.Nil(t, err)
+	handler := middleware(healthHandler)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented/1",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
+	)
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("X-Api-Key", "invalid-api-key")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 401, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "text/plain", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(
+		t,
+		"request did not satisfy any of the following security requirements: [map[ApiKeyAuth:[]]]",
+		string(respBody),
+	)
+}
+
 func TestInvalidResponseBody(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandlerWithWrongResponseBody)
@@ -280,6 +406,7 @@ func TestInvalidResponseBody(t *testing.T) {
 func TestInvalidResponseCode(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandlerWithWrongResponseCode)
@@ -311,6 +438,7 @@ func TestInvalidResponseCode(t *testing.T) {
 func TestDisabledRequestValidation(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath:   "./test-spec.yaml",
+		AuthCallback:      openapi3filter.NoopAuthenticationFunc,
 		DisableValidation: true,
 	})
 	require.Nil(t, err)
@@ -339,6 +467,7 @@ func TestDisabledRequestValidation(t *testing.T) {
 func TestDisabledResponseValidation(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath:   "./test-spec.yaml",
+		AuthCallback:      openapi3filter.NoopAuthenticationFunc,
 		DisableValidation: true,
 	})
 	require.Nil(t, err)
@@ -367,6 +496,7 @@ func TestDisabledResponseValidation(t *testing.T) {
 func TestUnexpectedContentType(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -394,6 +524,7 @@ func TestUnexpectedContentType(t *testing.T) {
 func TestCustomXMLDecoder(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 		CustomBodyDecoders: map[string]openapi3filter.BodyDecoder{
 			"application/xml": func(r io.Reader, h http.Header, sr *openapi3.SchemaRef, ef openapi3filter.EncodingFn) (interface{}, error) {
 				decoder := xml2map.NewDecoder(r)

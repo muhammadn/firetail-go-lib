@@ -5,6 +5,8 @@ info:
 paths:
   /implemented/{testparam}:
     post:
+      security:
+        - ApiKeyAuth: []
       parameters:
          - in: path
            name: testparam
@@ -37,6 +39,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/exampleDocument'
 components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
   schemas:
     exampleDocument:
       type: object
