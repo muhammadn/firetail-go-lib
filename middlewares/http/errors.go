@@ -33,6 +33,19 @@ type ErrorAtRequest interface {
 	StatusCode() int
 }
 
+// ErrorAtRequestUnspecified is used to wrap errors that are returned at request time, but aren't able to be broken down into more useful information
+type ErrorAtRequestUnspecified struct {
+	Err error
+}
+
+func (e ErrorAtRequestUnspecified) StatusCode() int {
+	return 500
+}
+
+func (e ErrorAtRequestUnspecified) Error() string {
+	return e.Err.Error()
+}
+
 // ErrorRouteNotFound is used when a request is made for which no corresponding route in the OpenAPI spec could be found
 type ErrorRouteNotFound struct {
 	RequestedPath string // The path that was requested for which no corresponding route could be found

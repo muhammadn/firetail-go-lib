@@ -96,7 +96,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Read in the request body so we can log it & replace r.Body with a new copy for the next http.Handler to read from
 			requestBody, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				options.ErrCallback(err, localResponseWriter)
+				options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter)
 				return
 			}
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
@@ -113,7 +113,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				options.ErrCallback(ErrorRouteNotFound{r.URL.Path}, localResponseWriter)
 				return
 			} else if err != nil {
-				options.ErrCallback(err, localResponseWriter)
+				options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter)
 				return
 			}
 
@@ -173,7 +173,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				}
 
 				// Else, we just use a non-specific ValidationError error
-				options.ErrCallback(err, localResponseWriter)
+				options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter)
 				return
 			}
 
@@ -213,7 +213,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 						return
 					}
 				}
-				options.ErrCallback(err, localResponseWriter)
+				options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter)
 				return
 			}
 

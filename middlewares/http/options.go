@@ -24,7 +24,7 @@ type Options struct {
 	// ErrCallback is an optional callback func which is given an error and a ResponseWriter to which an apropriate response can be written
 	// for the error. This allows you customise the responses given, when for example a request or response fails to validate against the
 	// openapi spec, to be consistent with the format in which the rest of your application returns error responses
-	ErrCallback func(error, http.ResponseWriter)
+	ErrCallback func(ErrorAtRequest, http.ResponseWriter)
 
 	// AuthenticationFunc is a callback func which must be defined if you wish to use security schemas in your openapi specification. See
 	// the openapi3filter package's reference for further documentation, and the Chi example for a demonstration of various auth types in use:
@@ -46,20 +46,10 @@ type Options struct {
 
 func (o *Options) setDefaults() {
 	if o.ErrCallback == nil {
-		o.ErrCallback = func(err error, w http.ResponseWriter) {
+		o.ErrCallback = func(err ErrorAtRequest, w http.ResponseWriter) {
 			w.Header().Add("Content-Type", "text/plain")
-
-			// ErrCallback should currently only receive firetail errors that satisfy the ErrorAtRequest interface.
-			errorAtRequest, isErrorAtRequest := err.(ErrorAtRequest)
-
-			if !isErrorAtRequest {
-				w.WriteHeader(500)
-				w.Write([]byte("500 (Internal Server Error): " + err.Error()))
-				return
-			}
-
-			w.WriteHeader(errorAtRequest.StatusCode())
-			w.Write([]byte(errorAtRequest.Error()))
+			w.WriteHeader(err.StatusCode())
+			w.Write([]byte(err.Error()))
 		}
 	}
 
