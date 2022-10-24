@@ -12,16 +12,33 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+var BasicAuthErr = errors.New("invalid authorization token")
+
 func main() {
 	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 		OpenapiSpecPath: "app-spec.yaml",
+		ErrCallback: func(err firetail.ErrorAtRequest, w http.ResponseWriter, r *http.Request) {
+			// In our err handler, we can check if the err is a security error.
+			// If it is, we can then see if any of its suberrs correspond to that returned by our auth.
+			if securityErr, isSecurityErr := err.(firetail.ErrorAuthNoMatchingSchema); isSecurityErr {
+				for _, subErr := range securityErr.Err.Errors {
+					if subErr == BasicAuthErr {
+						w.Header().Add("WWW-Authenticate", "Basic")
+						break
+					}
+				}
+			}
+			w.Header().Add("Content-Type", "text/plain")
+			w.WriteHeader(err.StatusCode())
+			w.Write([]byte(err.Error()))
+		},
 		AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 			switch ai.SecuritySchemeName {
 			case "BasicAuth":
 				token := ai.RequestValidationInput.Request.Header.Get("Authorization")
 				// b64 encoding of 'admin:password'
 				if token != "Basic YWRtaW46cGFzc3dvcmQ=" {
-					return errors.New("invalid authorization token")
+					return BasicAuthErr
 				}
 				return nil
 			case "ApiKeyAuth":
