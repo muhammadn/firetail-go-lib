@@ -3,7 +3,7 @@ package firetail
 import (
 	"fmt"
 
-	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
 )
 
 // InvalidConfiguration is used by middleware constructors if the configuration they are provided is invalid for some reason
@@ -143,7 +143,7 @@ func (e ErrorRequestBodyInvalid) Error() string {
 
 // ErrorAuthNoMatchingSchema is used when a request doesn't satisfy any of the securitySchemes corresponding to the route that the request matched in the OpenAPI spec
 type ErrorAuthNoMatchingSchema struct {
-	SecurityRequirements openapi3.SecurityRequirements
+	Err *openapi3filter.SecurityRequirementsError
 }
 
 func (e ErrorAuthNoMatchingSchema) StatusCode() int {
@@ -151,7 +151,14 @@ func (e ErrorAuthNoMatchingSchema) StatusCode() int {
 }
 
 func (e ErrorAuthNoMatchingSchema) Error() string {
-	return fmt.Sprintf("request did not satisfy any of the following security requirements: %v", e.SecurityRequirements)
+	errString := fmt.Sprintf("request did not satisfy security requirements: %s, errors: ", e.Err.Error())
+	for i, err := range e.Err.Errors {
+		errString += err.Error()
+		if i < len(e.Err.Errors)-1 {
+			errString += ", "
+		}
+	}
+	return errString
 }
 
 // ErrorResponseHeadersInvalid is used when any of the headers of a response don't conform to the schema in the OpenAPI spec
