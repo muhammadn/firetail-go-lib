@@ -12,7 +12,7 @@ import (
 	"os"
 
 	"github.com/FireTail-io/firetail-go-lib/examples/chi-petstore/api"
-	middleware "github.com/deepmap/oapi-codegen/pkg/chi-middleware"
+	firetail "github.com/FireTail-io/firetail-go-lib/middlewares/http"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -38,7 +38,14 @@ func main() {
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
-	r.Use(middleware.OapiRequestValidator(swagger))
+	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
+		OpenapiSpecPath: "./petstore-expanded.yaml",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	r.Use(firetailMiddleware)
 
 	// We now register our petStore above as the handler for the interface
 	api.HandlerFromMux(petStore, r)
