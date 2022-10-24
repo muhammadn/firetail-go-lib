@@ -31,8 +31,11 @@ type Options struct {
 	// https://github.com/FireTail-io/firetail-go-lib/tree/main/examples/chi
 	AuthCallback openapi3filter.AuthenticationFunc
 
-	// DisableValidation is an optional flag which, if set to true, disables request & response validation
-	DisableValidation bool
+	// DisableRequestValidation is an optional flag which, if set to true, disables request validation
+	DisableRequestValidation bool
+
+	// DisableResponseValidation is an optional flag which, if set to true, disables response validation
+	DisableResponseValidation bool
 
 	// CustomBodyDecoders is a map of Content-Type header values to openapi3 decoders - if the kin-openapi module does not support your
 	// Content-Type by default, you will need to add a custom decoder here.
