@@ -120,61 +120,55 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// We now know the resource that was requested, so we can fill it into our log entry
 			logEntry.Request.Resource = route.Path
 
-			// If validation has been disabled, everything is far simpler...
-			if options.DisableValidation {
-				startTime := time.Now()
-				next.ServeHTTP(localResponseWriter, r)
-				logEntry.ExecutionTime = float64(time.Since(startTime).Milliseconds())
-				return
-			}
-
-			// Validate the request against the OpenAPI spec. We'll also need the requestValidationInput again later when validating the response.
-			requestValidationInput := &openapi3filter.RequestValidationInput{
-				Request:    r,
-				PathParams: pathParams,
-				Route:      route,
-				Options: &openapi3filter.Options{
-					AuthenticationFunc: options.AuthCallback,
-				},
-			}
-			err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
-			if err != nil {
-				// If the err is an openapi3filter RequestError, we can extract more information from the err...
-				if err, isRequestErr := err.(*openapi3filter.RequestError); isRequestErr {
-					// TODO: Using strings.Contains is janky here and may break - should replace with something more reliable
-					// See the following open issue on the kin-openapi repo: https://github.com/getkin/kin-openapi/issues/477
-					// TODO: Open source contribution to kin-openapi?
-					if strings.Contains(err.Reason, "header Content-Type has unexpected value") {
-						options.ErrCallback(ErrorRequestContentTypeInvalid{r.Header.Get("Content-Type"), route.Path}, localResponseWriter, r)
-						return
-					}
-					if strings.Contains(err.Error(), "body has an error") {
-						options.ErrCallback(ErrorRequestBodyInvalid{err}, localResponseWriter, r)
-						return
-					}
-					if strings.Contains(err.Error(), "header has an error") {
-						options.ErrCallback(ErrorRequestHeadersInvalid{err}, localResponseWriter, r)
-						return
-					}
-					if strings.Contains(err.Error(), "query has an error") {
-						options.ErrCallback(ErrorRequestQueryParamsInvalid{err}, localResponseWriter, r)
-						return
-					}
-					if strings.Contains(err.Error(), "path has an error") {
-						options.ErrCallback(ErrorRequestPathParamsInvalid{err}, localResponseWriter, r)
-						return
-					}
+			// If it hasn't been disabled, validate the request against the OpenAPI spec.
+			if !options.DisableRequestValidation {
+				requestValidationInput := &openapi3filter.RequestValidationInput{
+					Request:    r,
+					PathParams: pathParams,
+					Route:      route,
+					Options: &openapi3filter.Options{
+						AuthenticationFunc: options.AuthCallback,
+					},
 				}
+				err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
+				if err != nil {
+					// If the err is an openapi3filter RequestError, we can extract more information from the err...
+					if err, isRequestErr := err.(*openapi3filter.RequestError); isRequestErr {
+						// TODO: Using strings.Contains is janky here and may break - should replace with something more reliable
+						// See the following open issue on the kin-openapi repo: https://github.com/getkin/kin-openapi/issues/477
+						// TODO: Open source contribution to kin-openapi?
+						if strings.Contains(err.Reason, "header Content-Type has unexpected value") {
+							options.ErrCallback(ErrorRequestContentTypeInvalid{r.Header.Get("Content-Type"), route.Path}, localResponseWriter, r)
+							return
+						}
+						if strings.Contains(err.Error(), "body has an error") {
+							options.ErrCallback(ErrorRequestBodyInvalid{err}, localResponseWriter, r)
+							return
+						}
+						if strings.Contains(err.Error(), "header has an error") {
+							options.ErrCallback(ErrorRequestHeadersInvalid{err}, localResponseWriter, r)
+							return
+						}
+						if strings.Contains(err.Error(), "query has an error") {
+							options.ErrCallback(ErrorRequestQueryParamsInvalid{err}, localResponseWriter, r)
+							return
+						}
+						if strings.Contains(err.Error(), "path has an error") {
+							options.ErrCallback(ErrorRequestPathParamsInvalid{err}, localResponseWriter, r)
+							return
+						}
+					}
 
-				// If the validation fails due to a security requirement, we pass a SecurityRequirementsError to the ErrCallback
-				if err, isSecurityErr := err.(*openapi3filter.SecurityRequirementsError); isSecurityErr {
-					options.ErrCallback(ErrorAuthNoMatchingSchema{err.SecurityRequirements}, localResponseWriter, r)
+					// If the validation fails due to a security requirement, we pass a SecurityRequirementsError to the ErrCallback
+					if err, isSecurityErr := err.(*openapi3filter.SecurityRequirementsError); isSecurityErr {
+						options.ErrCallback(ErrorAuthNoMatchingSchema{err.SecurityRequirements}, localResponseWriter, r)
+						return
+					}
+
+					// Else, we just use a non-specific ValidationError error
+					options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter, r)
 					return
 				}
-
-				// Else, we just use a non-specific ValidationError error
-				options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter, r)
-				return
 			}
 
 			// Serve the next handler down the chain & take note of the execution time
@@ -183,41 +177,43 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			next.ServeHTTP(chainResponseWriter, r)
 			logEntry.ExecutionTime = float64(time.Since(startTime).Milliseconds())
 
-			// Validate the response against the openapi spec
-			responseValidationInput := &openapi3filter.ResponseValidationInput{
-				RequestValidationInput: &openapi3filter.RequestValidationInput{
-					Request:    r,
-					PathParams: pathParams,
-					Route:      route,
-				},
-				Status: chainResponseWriter.Result().StatusCode,
-				Header: chainResponseWriter.Header(),
-				Options: &openapi3filter.Options{
-					IncludeResponseStatus: true,
-				},
-			}
-			responseBytes, err := ioutil.ReadAll(chainResponseWriter.Result().Body)
-			if err != nil {
-				options.ErrCallback(ErrorResponseBodyInvalid{err}, localResponseWriter, r)
-				return
-			}
-			responseValidationInput.SetBodyBytes(responseBytes)
-			err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
-			if err != nil {
-				if responseError, isResponseError := err.(*openapi3filter.ResponseError); isResponseError {
-					if responseError.Reason == "response body doesn't match the schema" {
-						options.ErrCallback(ErrorResponseBodyInvalid{responseError}, localResponseWriter, r)
-						return
-					} else if responseError.Reason == "status is not supported" {
-						options.ErrCallback(ErrorResponseStatusCodeInvalid{responseError.Input.Status}, localResponseWriter, r)
-						return
-					}
+			// If it hasn't been disabled, validate the response against the openapi spec
+			if !options.DisableResponseValidation {
+				responseValidationInput := &openapi3filter.ResponseValidationInput{
+					RequestValidationInput: &openapi3filter.RequestValidationInput{
+						Request:    r,
+						PathParams: pathParams,
+						Route:      route,
+					},
+					Status: chainResponseWriter.Result().StatusCode,
+					Header: chainResponseWriter.Header(),
+					Options: &openapi3filter.Options{
+						IncludeResponseStatus: true,
+					},
 				}
-				options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter, r)
-				return
+				responseBytes, err := ioutil.ReadAll(chainResponseWriter.Result().Body)
+				if err != nil {
+					options.ErrCallback(ErrorResponseBodyInvalid{err}, localResponseWriter, r)
+					return
+				}
+				responseValidationInput.SetBodyBytes(responseBytes)
+				err = openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
+				if err != nil {
+					if responseError, isResponseError := err.(*openapi3filter.ResponseError); isResponseError {
+						if responseError.Reason == "response body doesn't match the schema" {
+							options.ErrCallback(ErrorResponseBodyInvalid{responseError}, localResponseWriter, r)
+							return
+						} else if responseError.Reason == "status is not supported" {
+							options.ErrCallback(ErrorResponseStatusCodeInvalid{responseError.Input.Status}, localResponseWriter, r)
+							return
+						}
+					}
+					options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter, r)
+					return
+				}
 			}
 
-			// If the response written down the chain passed the validation, we can write it to our localResponseWriter
+			// If the response written down the chain passed all of the enabled validation, we can now write it to our localResponseWriter
 			for key, vals := range chainResponseWriter.HeaderMap {
 				for _, val := range vals {
 					localResponseWriter.Header().Add(key, val)
