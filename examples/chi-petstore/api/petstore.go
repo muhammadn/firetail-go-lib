@@ -96,6 +96,7 @@ func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
 	p.Pets[pet.Id] = pet
 
 	// Now, we have to return the NewPet
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(pet)
 }
