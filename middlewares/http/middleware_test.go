@@ -326,7 +326,7 @@ func TestRequestWithMissingAuth(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request did not satisfy any of the following security requirements: [map[ApiKeyAuth:[]]]",
+		"request did not satisfy security requirements: Security requirements failed, errors: invalid API key",
 		string(respBody),
 	)
 }
@@ -365,7 +365,7 @@ func TestRequestWithInvalidAuth(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request did not satisfy any of the following security requirements: [map[ApiKeyAuth:[]]]",
+		"request did not satisfy security requirements: Security requirements failed, errors: invalid API key",
 		string(respBody),
 	)
 }
