@@ -526,12 +526,7 @@ func TestCustomXMLDecoder(t *testing.T) {
 		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 		CustomBodyDecoders: map[string]openapi3filter.BodyDecoder{
 			"application/xml": func(r io.Reader, h http.Header, sr *openapi3.SchemaRef, ef openapi3filter.EncodingFn) (interface{}, error) {
-				decoder := xml2map.NewDecoder(r)
-				result, err := decoder.Decode()
-				if err != nil {
-					return nil, err
-				}
-				return result, nil
+				return xml2map.NewDecoder(r).Decode()
 			},
 		},
 	})
