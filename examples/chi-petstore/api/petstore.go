@@ -33,6 +33,7 @@ func sendPetstoreError(w http.ResponseWriter, code int, message string) {
 		Code:    int32(code),
 		Message: message,
 	}
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(petErr)
 }
