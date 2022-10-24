@@ -436,9 +436,9 @@ func TestInvalidResponseCode(t *testing.T) {
 
 func TestDisabledRequestValidation(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath:   "./test-spec.yaml",
-		AuthCallback:      openapi3filter.NoopAuthenticationFunc,
-		DisableValidation: true,
+		OpenapiSpecPath:          "./test-spec.yaml",
+		AuthCallback:             openapi3filter.NoopAuthenticationFunc,
+		DisableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -465,9 +465,9 @@ func TestDisabledRequestValidation(t *testing.T) {
 
 func TestDisabledResponseValidation(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath:   "./test-spec.yaml",
-		AuthCallback:      openapi3filter.NoopAuthenticationFunc,
-		DisableValidation: true,
+		OpenapiSpecPath:           "./test-spec.yaml",
+		AuthCallback:              openapi3filter.NoopAuthenticationFunc,
+		DisableResponseValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandlerWithWrongResponseBody)
