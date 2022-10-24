@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -532,7 +531,6 @@ func TestCustomXMLDecoder(t *testing.T) {
 				if err != nil {
 					return nil, err
 				}
-				log.Println(result)
 				return result, nil
 			},
 		},
