@@ -10,9 +10,9 @@ This is an example of a simple web server implemented using the `net/http` packa
 
 ```bash
 git clone git@github.com:FireTail-io/firetail-go-lib.git
-cd firetail-go-lib/examples/http-minimal
+cd firetail-go-lib/examples/minimal-http
 go build
-./http-minimal
+./minimal-http
 ```
 
 Curl it!

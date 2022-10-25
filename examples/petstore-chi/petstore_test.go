@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/FireTail-io/firetail-go-lib/examples/chi-petstore/api"
+	"github.com/FireTail-io/firetail-go-lib/examples/petstore-chi/api"
 	middleware "github.com/deepmap/oapi-codegen/pkg/chi-middleware"
 	"github.com/deepmap/oapi-codegen/pkg/testutil"
 	"github.com/go-chi/chi/v5"

@@ -10,9 +10,9 @@ This example Chi app is a copy of the [hello world example](https://github.com/g
 
 ```bash
 git clone git@github.com:FireTail-io/firetail-go-lib.git
-cd firetail-go-lib/examples/chi-minimal
+cd firetail-go-lib/examples/minimal-chi
 go build
-./chi-minimal
+./minimal-chi
 ```
 
 Curl it!

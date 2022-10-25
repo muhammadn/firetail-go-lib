@@ -14,7 +14,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/FireTail-io/firetail-go-lib/examples/chi-petstore/api"
+	"github.com/FireTail-io/firetail-go-lib/examples/petstore-chi/api"
 	firetail "github.com/FireTail-io/firetail-go-lib/middlewares/http"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/go-chi/chi/v5"
