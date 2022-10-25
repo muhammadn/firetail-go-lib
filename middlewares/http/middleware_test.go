@@ -99,7 +99,7 @@ func TestRequestToInvalidRoute(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "firetail - no matching route found for request path /not-implemented", string(respBody))
+	assert.Equal(t, "firetail - no matching path found for \"/not-implemented\"", string(respBody))
 }
 
 func TestRequestWithDisallowedMethod(t *testing.T) {
@@ -123,7 +123,7 @@ func TestRequestWithDisallowedMethod(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "firetail - /implemented/1 does not support GET method", string(respBody))
+	assert.Equal(t, "firetail - \"/implemented/1\" path does not support GET method", string(respBody))
 }
 
 func TestRequestWithInvalidHeader(t *testing.T) {

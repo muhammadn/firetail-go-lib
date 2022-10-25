@@ -56,7 +56,7 @@ func (e ErrorRouteNotFound) StatusCode() int {
 }
 
 func (e ErrorRouteNotFound) Error() string {
-	return fmt.Sprintf("firetail - no matching route found for request path %s", e.RequestedPath)
+	return fmt.Sprintf("firetail - no matching path found for \"%s\"", e.RequestedPath)
 }
 
 // ErrorUnsupportedMethod is used when a request is made which corresponds to a route in the OpenAPI spec, but that route
@@ -71,7 +71,7 @@ func (e ErrorUnsupportedMethod) StatusCode() int {
 }
 
 func (e ErrorUnsupportedMethod) Error() string {
-	return fmt.Sprintf("firetail - %s does not support %s method", e.RequestedPath, e.RequestedMethod)
+	return fmt.Sprintf("firetail - \"%s\" path does not support %s method", e.RequestedPath, e.RequestedMethod)
 }
 
 // ErrorRequestHeadersInvalid is used when any of the headers of a request don't conform to the schema in the OpenAPI spec, except
