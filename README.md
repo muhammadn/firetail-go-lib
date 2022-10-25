@@ -14,10 +14,10 @@ Automated testing is setup with the `testing` package, using [github.com/stretch
 
 ## XML Support
 
-The Firetail Go library does not come with XML request & response body support out of the box. You will need to implement your own as an `openapi3filter.BodyDecoder` and pass it to Firetail as part of the `CustomBodyDecoders` field of the `firetail.Options` struct. See the following example for a minimal XML decoder setup using [sbabiv/xml2map](https://github.com/sbabiv/xml2map):
+The Firetail Go library does not come with XML request & response body decoding support out of the box. You will need to implement your own decoder as an [openapi3filter.BodyDecoder](https://pkg.go.dev/github.com/getkin/kin-openapi/openapi3filter#BodyDecoder) and pass it to Firetail as part of the `CustomBodyDecoders` field of the `firetail.Options` struct. See the following example for a minimal XML decoder setup using [sbabiv/xml2map](https://github.com/sbabiv/xml2map):
 
 ```go
-middleware, err := GetMiddleware(&Options{
+middleware, err := firetail.GetMiddleware(&firetail.Options{
 	OpenapiSpecPath: "./app-spec.yaml",
 	CustomBodyDecoders: map[string]openapi3filter.BodyDecoder{
 		"application/xml": func(r io.Reader, h http.Header, sr *openapi3.SchemaRef, ef openapi3filter.EncodingFn) (interface{}, error) {
