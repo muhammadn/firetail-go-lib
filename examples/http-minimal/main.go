@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	firetail "github.com/FireTail-io/firetail-go-lib/middlewares/http"
@@ -25,6 +26,7 @@ func main() {
 	// Get a firetail middleware
 	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 		OpenapiSpecPath: "app-spec.yaml",
+		LogApiKey:       os.Getenv("FIRETAIL_LOG_API_KEY"),
 	})
 	if err != nil {
 		panic(err)

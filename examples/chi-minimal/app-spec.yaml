@@ -14,10 +14,3 @@ paths:
               schema:
                 type: string
                 enum: ["I'm Healthy! :)"]
-        '500':
-          description: Status of the server
-          content:
-            text/plain:
-              schema:
-                type: string
-                enum: ["I'm Unhealthy! :("]
