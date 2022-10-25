@@ -12,7 +12,7 @@ type ErrorInvalidConfiguration struct {
 }
 
 func (e ErrorInvalidConfiguration) Error() string {
-	return fmt.Sprintf("invalid configuration: %s", e.Err.Error())
+	return fmt.Sprintf("firetail - invalid configuration: %s", e.Err.Error())
 }
 
 // ErrorAppspecInvalid is used at initialisation/startup when the OpenAPI appspec file is malformed
@@ -21,7 +21,7 @@ type ErrorAppspecInvalid struct {
 }
 
 func (e ErrorAppspecInvalid) Error() string {
-	return fmt.Sprintf("invalid appspec: %s", e.Err.Error())
+	return fmt.Sprintf("firetail - invalid appspec: %s", e.Err.Error())
 }
 
 // ErrorAtRequest is an interface that extends the standard error interface for errors that occur during the handling of a request.
@@ -43,7 +43,7 @@ func (e ErrorAtRequestUnspecified) StatusCode() int {
 }
 
 func (e ErrorAtRequestUnspecified) Error() string {
-	return e.Err.Error()
+	return fmt.Sprintf("firetail - unspecified err: %s", e.Err.Error())
 }
 
 // ErrorRouteNotFound is used when a request is made for which no corresponding route in the OpenAPI spec could be found
@@ -56,7 +56,7 @@ func (e ErrorRouteNotFound) StatusCode() int {
 }
 
 func (e ErrorRouteNotFound) Error() string {
-	return fmt.Sprintf("no matching route found for request path %s", e.RequestedPath)
+	return fmt.Sprintf("firetail - no matching route found for request path %s", e.RequestedPath)
 }
 
 // ErrorUnsupportedMethod is used when a request is made which corresponds to a route in the OpenAPI spec, but that route
@@ -71,7 +71,7 @@ func (e ErrorUnsupportedMethod) StatusCode() int {
 }
 
 func (e ErrorUnsupportedMethod) Error() string {
-	return fmt.Sprintf("%s does not support %s method", e.RequestedPath, e.RequestedMethod)
+	return fmt.Sprintf("firetail - %s does not support %s method", e.RequestedPath, e.RequestedMethod)
 }
 
 // ErrorRequestHeadersInvalid is used when any of the headers of a request don't conform to the schema in the OpenAPI spec, except
@@ -85,7 +85,7 @@ func (e ErrorRequestHeadersInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestHeadersInvalid) Error() string {
-	return fmt.Sprintf("request headers invalid: %s", e.Err.Error())
+	return fmt.Sprintf("firetail - request headers invalid: %s", e.Err.Error())
 }
 
 // ErrorRequestHeadersInvalid is used when the Content-Type header of a request doesn't conform to the schema in the OpenAPI spec
@@ -99,7 +99,7 @@ func (e ErrorRequestContentTypeInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestContentTypeInvalid) Error() string {
-	return fmt.Sprintf("%s route does not support content type %s", e.RequestedRoute, e.RequestedContentType)
+	return fmt.Sprintf("firetail - %s route does not support content type %s", e.RequestedRoute, e.RequestedContentType)
 }
 
 // ErrorRequestQueryParamsInvalid is used when the query params of a request don't conform to the schema in the OpenAPI spec
@@ -112,7 +112,7 @@ func (e ErrorRequestQueryParamsInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestQueryParamsInvalid) Error() string {
-	return fmt.Sprintf("request query parameter invalid: %s", e.Err.Error())
+	return fmt.Sprintf("firetail - request query parameter invalid: %s", e.Err.Error())
 }
 
 // ErrorRequestPathParamsInvalid is used when the path params of a request don't conform to the schema in the OpenAPI spec
@@ -125,7 +125,7 @@ func (e ErrorRequestPathParamsInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestPathParamsInvalid) Error() string {
-	return fmt.Sprintf("request path parameter invalid: %s", e.Err.Error())
+	return fmt.Sprintf("firetail - request path parameter invalid: %s", e.Err.Error())
 }
 
 // ErrorRequestBodyInvalid is used when the body of a request doesn't conform to the schema in the OpenAPI spec
@@ -138,7 +138,7 @@ func (e ErrorRequestBodyInvalid) StatusCode() int {
 }
 
 func (e ErrorRequestBodyInvalid) Error() string {
-	return fmt.Sprintf("request body invalid: %s", e.Err.Error())
+	return fmt.Sprintf("firetail - request body invalid: %s", e.Err.Error())
 }
 
 // ErrorAuthNoMatchingSchema is used when a request doesn't satisfy any of the securitySchemes corresponding to the route that the request matched in the OpenAPI spec
@@ -151,7 +151,7 @@ func (e ErrorAuthNoMatchingSchema) StatusCode() int {
 }
 
 func (e ErrorAuthNoMatchingSchema) Error() string {
-	errString := fmt.Sprintf("request did not satisfy security requirements: %s, errors: ", e.Err.Error())
+	errString := fmt.Sprintf("firetail - request did not satisfy security requirements: %s, errors: ", e.Err.Error())
 	for i, err := range e.Err.Errors {
 		errString += err.Error()
 		if i < len(e.Err.Errors)-1 {
@@ -174,7 +174,7 @@ func (e ErrorResponseHeadersInvalid) StatusCode() int {
 }
 
 func (e ErrorResponseHeadersInvalid) Error() string {
-	return fmt.Sprintf("response headers invalid: %s", e.Err.Error())
+	return fmt.Sprintf("firetail - response headers invalid: %s", e.Err.Error())
 }
 
 // ErrorResponseHeadersInvalid is used when the body of a response doesn't conform to the schema in the OpenAPI spec
@@ -187,7 +187,7 @@ func (e ErrorResponseBodyInvalid) StatusCode() int {
 }
 
 func (e ErrorResponseBodyInvalid) Error() string {
-	return fmt.Sprintf("response body invalid: %s", e.Err.Error())
+	return fmt.Sprintf("firetail - response body invalid: %s", e.Err.Error())
 }
 
 // ErrorResponseStatusCodeInvalid is used when the status code of a response doesn't conform to the schema in the OpenAPI spec
@@ -200,5 +200,5 @@ func (e ErrorResponseStatusCodeInvalid) StatusCode() int {
 }
 
 func (e ErrorResponseStatusCodeInvalid) Error() string {
-	return fmt.Sprintf("response status code invalid: %d", e.RespondedStatusCode)
+	return fmt.Sprintf("firetail - response status code invalid: %d", e.RespondedStatusCode)
 }
