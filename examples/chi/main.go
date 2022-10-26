@@ -16,7 +16,7 @@ import (
 func main() {
 	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 		OpenapiSpecPath: "app-spec.yaml",
-		LogApiKey:       os.Getenv("firetail-api-key"),
+		LogApiKey:       os.Getenv("firetail_api_key"),
 		AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 			switch ai.SecuritySchemeName {
 			case "BasicAuth":
