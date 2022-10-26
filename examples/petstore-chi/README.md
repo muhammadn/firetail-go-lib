@@ -8,6 +8,8 @@ Upon installing the Firetail middleware, several discrepancies were immediately 
 - The `GET /pets` endpoint returned `null` when there were no pets in the store, but the openapi schema did not describe the response body as nullable. This was rectified by ammending the appspec to describe the response body as nullable.
 - The `POST /pets` response code upon successful creation of a new pet was `201`, however the appspec defined a `200` response. This was rectified by ammending the appspec to define a `201` response, instead of a `200`, as `201` is a more apropriate status code in this case.
 
+Some additional modifications have been made in order to demonstrate the Firetail middleware's functionalities, such as [Authentication](#authentication).
+
 
 
 ## Feature Overview
