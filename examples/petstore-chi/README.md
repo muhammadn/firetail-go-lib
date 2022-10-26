@@ -116,21 +116,21 @@ securitySchemes:
 This was implemented in the application by simply defining an `AuthCallback` and providing it to the Firetail middleware as follows:
 
 ```go
-	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
-		OpenapiSpecPath: "./petstore-expanded.yaml",
-		AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
-			switch ai.SecuritySchemeName {
-			case "MyBearerAuth":
-				tokenParts := strings.Split(ai.RequestValidationInput.Request.Header.Get("Authorization"), " ")
-				if len(tokenParts) < 2 || tokenParts[1] != "header.payload.signature" {
-					return errors.New("invalid bearer token for MyBearerAuth")
-				}
-				return nil
-			default:
-				return errors.New(fmt.Sprintf("security scheme \"%s\" not implemented", ai.SecuritySchemeName))
-			}
-		},
-	})
+firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
+  OpenapiSpecPath: "./petstore-expanded.yaml",
+  AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
+    switch ai.SecuritySchemeName {
+    case "MyBearerAuth":
+      tokenParts := strings.Split(ai.RequestValidationInput.Request.Header.Get("Authorization"), " ")
+      if len(tokenParts) < 2 || tokenParts[1] != "header.payload.signature" {
+        return errors.New("invalid bearer token for MyBearerAuth")
+      }
+      return nil
+    default:
+      return errors.New(fmt.Sprintf("security scheme \"%s\" not implemented", ai.SecuritySchemeName))
+    }
+  },
+})
 ```
 
 We can test this out by creating a pet:
