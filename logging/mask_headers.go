@@ -3,7 +3,6 @@ package logging
 import (
 	"crypto"
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 )
@@ -76,7 +75,6 @@ func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]Hea
 					"[Bb]earer [A-Za-z0-9-_]*.[A-Za-z0-9-_]*.[A-Za-z0-9-_]*",
 					value,
 				)
-				log.Println("isJWT", isJWT, headerName, value)
 				if !isJWT {
 					continue
 				}
