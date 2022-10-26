@@ -107,7 +107,7 @@ The petstore appspec has been modified to apply the following security scheme to
 
 ```yaml
 securitySchemes:
-	MyBearerAuth:
+  MyBearerAuth:
     type: http
     scheme: bearer
     bearerFormat: JWT
