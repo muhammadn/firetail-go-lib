@@ -1,4 +1,4 @@
-# Firetail Chi Example
+# Minimal Chi Example
 
 This example Chi app is a copy of the [hello world example](https://github.com/go-chi/chi/tree/master/_examples/hello-world) from the [go-chi/chi repo](https://github.com/go-chi/chi), which has been modified to use Firetail middleware and conform to the included [app-spec.yaml](./app-spec.yaml).
 

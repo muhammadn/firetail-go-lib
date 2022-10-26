@@ -1,4 +1,4 @@
-# Firetail OpenAPIv3 Prototype
+# Minimal net/http Example
 
 This is an example of a simple web server implemented using the `net/http` package, with a single `/health` endpoint as described by the included OpenAPIv3 [app-spec.yaml](./app-spec.yaml), using the Firetail middleware.
 
