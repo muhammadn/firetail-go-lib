@@ -34,7 +34,7 @@ The Firetail middleware blocks:
   ```
   < HTTP/1.1 404 Not Found
   < Content-Type: text/plain
-  [firetail] no matching path found for "/owners"
+  firetail - no matching path found for "/owners"
   ```
 
 - Requests made to paths that are defined in your appspec, but are made with unsupported methods:
@@ -45,7 +45,7 @@ The Firetail middleware blocks:
   ```
   < HTTP/1.1 405 Method Not Allowed
   < Content-Type: text/plain
-  [firetail] "/pets" path does not support DELETE method
+  firetail - "/pets" path does not support DELETE method
   ```
 
 - Requests made to paths defined in your appspec, with methods defined in your appspec, but with a `Content-Type` that hasn't been defined in your appspec:
@@ -67,7 +67,7 @@ The Firetail middleware blocks:
   ```
   < HTTP/1.1 400 Bad Request
   < Content-Type: text/plain
-  [firetail] request path parameter invalid: parameter "id" in path has an error: value abc: an invalid integer: invalid syntax
+  firetail - request path parameter invalid: parameter "id" in path has an error: value abc: an invalid integer: invalid syntax
   ```
 
 - Requests made with query parameters that don't match the schema defined in your appspec:
@@ -78,7 +78,7 @@ The Firetail middleware blocks:
   ```
   < HTTP/1.1 400 Bad Request
   < Content-Type: text/plain
-  [firetail] request query parameter invalid: parameter "limit" in query has an error: value abc: an invalid integer: invalid syntax
+  firetail - request query parameter invalid: parameter "limit" in query has an error: value abc: an invalid integer: invalid syntax
   ```
 
 - Requests made with bodies that don't match the schema defined in your appspec:
@@ -90,7 +90,7 @@ The Firetail middleware blocks:
   ```
   < HTTP/1.1 400 Bad Request
   < Content-Type: text/plain
-  [firetail] request body invalid: request body has an error: doesn't match the schema: Error at "/name": Field must be set to string or not be present
+  firetail - request body invalid: request body has an error: doesn't match the schema: Error at "/name": Field must be set to string or not be present
   Schema:
     {
       "description": "Name of the pet",
