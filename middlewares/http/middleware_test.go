@@ -67,7 +67,7 @@ func TestInvalidSpecPath(t *testing.T) {
 		OpenapiSpecPath: "./test-spec-not-here.yaml",
 	})
 	require.IsType(t, ErrorInvalidConfiguration{}, err)
-	require.Equal(t, "invalid configuration: open ./test-spec-not-here.yaml: no such file or directory", err.Error())
+	require.Equal(t, "firetail - invalid configuration: open ./test-spec-not-here.yaml: no such file or directory", err.Error())
 }
 
 func TestInvalidSpec(t *testing.T) {
@@ -75,7 +75,7 @@ func TestInvalidSpec(t *testing.T) {
 		OpenapiSpecPath: "./test-spec-invalid.yaml",
 	})
 	require.IsType(t, ErrorAppspecInvalid{}, err)
-	require.Equal(t, "invalid appspec: invalid paths: a short description of the response is required", err.Error())
+	require.Equal(t, "firetail - invalid appspec: invalid paths: a short description of the response is required", err.Error())
 }
 
 func TestRequestToInvalidRoute(t *testing.T) {
@@ -99,7 +99,7 @@ func TestRequestToInvalidRoute(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "no matching route found for request path /not-implemented", string(respBody))
+	assert.Equal(t, "firetail - no matching path found for \"/not-implemented\"", string(respBody))
 }
 
 func TestRequestWithDisallowedMethod(t *testing.T) {
@@ -123,7 +123,7 @@ func TestRequestWithDisallowedMethod(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "/implemented/1 does not support GET method", string(respBody))
+	assert.Equal(t, "firetail - \"/implemented/1\" path does not support GET method", string(respBody))
 }
 
 func TestRequestWithInvalidHeader(t *testing.T) {
@@ -154,7 +154,7 @@ func TestRequestWithInvalidHeader(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request headers invalid: parameter \"X-Test-Header\" in header has an error: value invalid: an invalid number: invalid syntax",
+		"firetail - request headers invalid: parameter \"X-Test-Header\" in header has an error: value invalid: an invalid number: invalid syntax",
 		string(respBody),
 	)
 }
@@ -186,7 +186,7 @@ func TestRequestWithInvalidQueryParam(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request query parameter invalid: parameter \"test-param\" in query has an error: value invalid: an invalid number: invalid syntax",
+		"firetail - request query parameter invalid: parameter \"test-param\" in query has an error: value invalid: an invalid number: invalid syntax",
 		string(respBody),
 	)
 }
@@ -217,7 +217,7 @@ func TestRequestWithInvalidPathParam(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request path parameter invalid: parameter \"testparam\" in path has an error: value invalid-path-param: an invalid number: invalid syntax",
+		"firetail - request path parameter invalid: parameter \"testparam\" in path has an error: value invalid-path-param: an invalid number: invalid syntax",
 		string(respBody),
 	)
 }
@@ -249,7 +249,7 @@ func TestRequestWithInvalidBody(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request body invalid: request body has an error: doesn't match the schema: Error at \"/description\": property \"description\" is missing\nSchema:\n  {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"description\": {\n        \"enum\": [\n          \"test description\"\n        ],\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"description\"\n    ],\n    \"type\": \"object\"\n  }\n\nValue:\n  {}\n",
+		"firetail - request body invalid: request body has an error: doesn't match the schema: Error at \"/description\": property \"description\" is missing\nSchema:\n  {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"description\": {\n        \"enum\": [\n          \"test description\"\n        ],\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"description\"\n    ],\n    \"type\": \"object\"\n  }\n\nValue:\n  {}\n",
 		string(respBody),
 	)
 }
@@ -326,7 +326,7 @@ func TestRequestWithMissingAuth(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request did not satisfy security requirements: Security requirements failed, errors: invalid API key",
+		"firetail - request did not satisfy security requirements: Security requirements failed, errors: invalid API key",
 		string(respBody),
 	)
 }
@@ -365,7 +365,7 @@ func TestRequestWithInvalidAuth(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request did not satisfy security requirements: Security requirements failed, errors: invalid API key",
+		"firetail - request did not satisfy security requirements: Security requirements failed, errors: invalid API key",
 		string(respBody),
 	)
 }
@@ -397,7 +397,7 @@ func TestInvalidResponseBody(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"response body invalid: response body doesn't match the schema: Error at \"/description\": value is not one of the allowed values\nSchema:\n  {\n    \"enum\": [\n      \"test description\"\n    ],\n    \"type\": \"string\"\n  }\n\nValue:\n  \"another test description\"\n",
+		"firetail - response body invalid: response body doesn't match the schema: Error at \"/description\": value is not one of the allowed values\nSchema:\n  {\n    \"enum\": [\n      \"test description\"\n    ],\n    \"type\": \"string\"\n  }\n\nValue:\n  \"another test description\"\n",
 		string(respBody),
 	)
 }
@@ -429,7 +429,7 @@ func TestInvalidResponseCode(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"response status code invalid: 201",
+		"firetail - response status code invalid: 201",
 		string(respBody),
 	)
 }
@@ -517,7 +517,7 @@ func TestUnexpectedContentType(t *testing.T) {
 
 	respBody, err := io.ReadAll(responseRecorder.Body)
 	require.Nil(t, err)
-	assert.Equal(t, "/implemented/{testparam} route does not support content type text/plain", string(respBody))
+	assert.Equal(t, "firetail - /implemented/{testparam} route does not support content type text/plain", string(respBody))
 }
 
 func TestCustomXMLDecoder(t *testing.T) {
