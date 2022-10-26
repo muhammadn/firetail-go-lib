@@ -21,62 +21,81 @@ Using this familiar petstore example, we can demonstrate a number of the Firetai
 
 ### Request Validation
 
-The Firetail middleware blocks requests made to paths that aren't defined in your appspec:
+The Firetail middleware blocks:
 
-```bash
-curl localhost:8080/owners -v
-```
+- Requests made to paths that aren't defined in your appspec:
+  ```bash
+  curl localhost:8080/owners -v
+  ```
 
-```
-< HTTP/1.1 404 Not Found
-< Content-Type: text/plain
-[firetail] no matching path found for "/owners"
-```
+  ```
+  < HTTP/1.1 404 Not Found
+  < Content-Type: text/plain
+  [firetail] no matching path found for "/owners"
+  ```
 
-The Firetail middleware will also block requests made to paths that are defined in your appspec, but are made with unsupported methods:
+- Requests made to paths that are defined in your appspec, but are made with unsupported methods:
+  ```bash
+  curl localhost:8080/pets -X DELETE -v
+  ```
 
-```bash
-curl localhost:8080/pets -X DELETE -v
-```
+  ```
+  < HTTP/1.1 405 Method Not Allowed
+  < Content-Type: text/plain
+  [firetail] "/pets" path does not support DELETE method
+  ```
 
-```
-< HTTP/1.1 405 Method Not Allowed
-< Content-Type: text/plain
-[firetail] "/pets" path does not support DELETE method
-```
+- Requests made to paths defined in your appspec, with methods defined in your appspec, but with a `Content-Type` that hasn't been defined in your appspec:
+  ```bash
+  curl localhost:8080/pets -X POST -H "Content-Type: application/xml" -d '<?xml version="1.0" encoding="UTF-8" ?><root><name>Hector</name></root>' -v
+  ```
 
-> Showing request fails when body passed does not match defined schema on api content-type
+  ```
+  < HTTP/1.1 415 Unsupported Media Type
+  firetail - /pets route does not support content type application/xml
+  ```
 
-The Firetail middleware will also block requests made with bodies that don't match the schema defined in your appspec:
+- Requests made with path parameters that don't match the schema defined in your appspec:
+  ```bash
+  curl localhost:8080/pets/abc -v
+  ```
 
-```bash
-curl localhost:8080/pets -X POST -H "Content-Type: application/json" -d '{"name":123}' -v
-```
+  ```
+  < HTTP/1.1 400 Bad Request
+  < Content-Type: text/plain
+  [firetail] request path parameter invalid: parameter "id" in path has an error: value abc: an invalid integer: invalid syntax
+  ```
 
-```
-< HTTP/1.1 400 Bad Request
-< Content-Type: text/plain
-[firetail] request body invalid: request body has an error: doesn't match the schema: Error at "/name": Field must be set to string or not be present
-Schema:
-  {
-    "description": "Name of the pet",
-    "type": "string"
-  }
+- Requests made with query parameters that don't match the schema defined in your appspec:
+  ```bash
+  curl localhost:8080/pets?limit=abc -v
+  ```
 
-Value:
-  "number, integer"
-```
+  ```
+  < HTTP/1.1 400 Bad Request
+  < Content-Type: text/plain
+  [firetail] request query parameter invalid: parameter "limit" in query has an error: value abc: an invalid integer: invalid syntax
+  ```
 
-The Firetail middleware will also return a 415 when a request is made with a `Content-Type` that hasn't been defined in your appspec:
+- Requests made with bodies that don't match the schema defined in your appspec:
 
-```bash
-curl localhost:8080/pets -X POST -H "Content-Type: application/xml" -d '<?xml version="1.0" encoding="UTF-8" ?><root><name>Hector</name></root>' -v
-```
+  ```bash
+  curl localhost:8080/pets -X POST -H "Content-Type: application/json" -d '{"name":123}' -v
+  ```
 
-```
-< HTTP/1.1 415 Unsupported Media Type
-firetail - /pets route does not support content type application/xml
-```
+  ```
+  < HTTP/1.1 400 Bad Request
+  < Content-Type: text/plain
+  [firetail] request body invalid: request body has an error: doesn't match the schema: Error at "/name": Field must be set to string or not be present
+  Schema:
+    {
+      "description": "Name of the pet",
+      "type": "string"
+    }
+  
+  Value:
+    "number, integer"
+  ```
 
 
 
