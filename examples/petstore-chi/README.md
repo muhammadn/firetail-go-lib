@@ -103,7 +103,17 @@ The Firetail middleware blocks:
 
 ### Authentication
 
-The petstore appspec has been modified to apply a security scheme to the `DELETE /pets/{id}` endpoint. This was implemented by simply defining an `AuthCallback` and providing it to the Firetail middleware as follows:
+The petstore appspec has been modified to apply the following security scheme to the `DELETE /pets/{id}` endpoint: 
+
+```yaml
+securitySchemes:
+	MyBearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
+```
+
+This was implemented in the application by simply defining an `AuthCallback` and providing it to the Firetail middleware as follows:
 
 ```go
 	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
