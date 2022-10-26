@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -327,7 +326,7 @@ func TestRequestWithMissingAuth(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request did not satisfy any of the following security requirements: [map[ApiKeyAuth:[]]]",
+		"request did not satisfy security requirements: Security requirements failed, errors: invalid API key",
 		string(respBody),
 	)
 }
@@ -366,7 +365,7 @@ func TestRequestWithInvalidAuth(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"request did not satisfy any of the following security requirements: [map[ApiKeyAuth:[]]]",
+		"request did not satisfy security requirements: Security requirements failed, errors: invalid API key",
 		string(respBody),
 	)
 }
@@ -437,9 +436,9 @@ func TestInvalidResponseCode(t *testing.T) {
 
 func TestDisabledRequestValidation(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath:   "./test-spec.yaml",
-		AuthCallback:      openapi3filter.NoopAuthenticationFunc,
-		DisableValidation: true,
+		OpenapiSpecPath:          "./test-spec.yaml",
+		AuthCallback:             openapi3filter.NoopAuthenticationFunc,
+		DisableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -466,9 +465,9 @@ func TestDisabledRequestValidation(t *testing.T) {
 
 func TestDisabledResponseValidation(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath:   "./test-spec.yaml",
-		AuthCallback:      openapi3filter.NoopAuthenticationFunc,
-		DisableValidation: true,
+		OpenapiSpecPath:           "./test-spec.yaml",
+		AuthCallback:              openapi3filter.NoopAuthenticationFunc,
+		DisableResponseValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandlerWithWrongResponseBody)
@@ -527,13 +526,7 @@ func TestCustomXMLDecoder(t *testing.T) {
 		AuthCallback:    openapi3filter.NoopAuthenticationFunc,
 		CustomBodyDecoders: map[string]openapi3filter.BodyDecoder{
 			"application/xml": func(r io.Reader, h http.Header, sr *openapi3.SchemaRef, ef openapi3filter.EncodingFn) (interface{}, error) {
-				decoder := xml2map.NewDecoder(r)
-				result, err := decoder.Decode()
-				if err != nil {
-					return nil, err
-				}
-				log.Println(result)
-				return result, nil
+				return xml2map.NewDecoder(r).Decode()
 			},
 		},
 	})

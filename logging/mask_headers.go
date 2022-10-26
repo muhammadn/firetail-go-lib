@@ -36,7 +36,6 @@ const (
 func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]HeaderMask, isStrict bool) map[string][]string {
 	maskedHeaders := map[string][]string{}
 
-	headerNameHashFails := 0
 	for headerName, headerValues := range unmaskedHeaders {
 		mask := headersMask[strings.ToLower(headerName)]
 
@@ -67,11 +66,7 @@ func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]Hea
 			break
 
 		case HashHeader:
-			hashedHeaderName, err := hashString(headerName)
-			if err != nil {
-				hashedHeaderName = fmt.Sprintf("Failed to hash header name (%d)", headerNameHashFails)
-				headerNameHashFails += 1
-			}
+			hashedHeaderName := hashString(headerName)
 			maskedHeaders[hashedHeaderName] = hashValues(headerValues)
 			break
 
@@ -104,21 +99,14 @@ func MaskHeaders(unmaskedHeaders map[string][]string, headersMask map[string]Hea
 func hashValues(values []string) []string {
 	hashedValues := []string{}
 	for _, value := range values {
-		hashedValue, err := hashString(value)
-		if err != nil {
-			hashedValues = append(hashedValues, "Failed to hash, err: "+err.Error())
-			continue
-		}
+		hashedValue := hashString(value)
 		hashedValues = append(hashedValues, hashedValue)
 	}
 	return hashedValues
 }
 
-func hashString(value string) (string, error) {
+func hashString(value string) string {
 	hasher := crypto.SHA1.New()
-	_, err := hasher.Write([]byte(value))
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%x", (hasher.Sum(nil))), nil
+	hasher.Write([]byte(value)) // SHA1's Write implementation never returns a non-nil err.
+	return fmt.Sprintf("%x", (hasher.Sum(nil)))
 }

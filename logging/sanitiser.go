@@ -27,16 +27,26 @@ type SanitiserOptions struct {
 
 func DefaultSanitiser() func(LogEntry) LogEntry {
 	// TODO: Create sensible defaults here.
-	return GetSanitiser(SanitiserOptions{})
+	return GetSanitiser(SanitiserOptions{
+		RequestHeadersMask: map[string]HeaderMask{
+			"set-cookie":    HashHeaderValues,
+			"cookie":        HashHeaderValues,
+			"authorization": HashHeaderValues,
+			"x-api-key":     HashHeaderValues,
+			"token":         HashHeaderValues,
+			"api-token":     HashHeaderValues,
+			"api-key":       HashHeaderValues,
+		},
+	})
 }
 
 func GetSanitiser(options SanitiserOptions) func(LogEntry) LogEntry {
 	// Fill in zero values for nil options
 	if options.RequestHeadersMask == nil {
-		options.RequestHeadersMask = map[string]HeaderMask{}
+		options.ResponseHeadersMask = map[string]HeaderMask{}
 	}
 	if options.ResponseHeadersMask == nil {
-		options.RequestHeadersMask = map[string]HeaderMask{}
+		options.ResponseHeadersMask = map[string]HeaderMask{}
 	}
 	if options.RequestSanitisationCallback == nil {
 		options.RequestSanitisationCallback = func(s string) string { return s }
