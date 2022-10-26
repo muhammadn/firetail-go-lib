@@ -198,7 +198,24 @@ Then attempting to:
 
 ### Response Validation
 
-This petstore example's appspec has been modified such that the `GET /pets` response body should only include the `name` and `id` of each pet. The following definition was added to the appspec's schema definitions:
+#### Response Code Validation
+
+The default response for the `POST /pet` endpoint has been removed from the appspec, and the implementation modified such that when it is attempted to create a pet with a name of `""`, the empty string, the application returns a `400`. This allows us to test the scenario where the application returns a response code that is not defined in the appspec:
+
+```bash
+curl localhost:8080/pets -X POST -H "Content-Type: application/json" -d '{"name":""}' -v
+```
+
+```
+< HTTP/1.1 500 Internal Server Error
+< Content-Type: text/plain
+firetail - response status code invalid: 400
+```
+
+
+#### Response Body Validation
+
+This petstore example's appspec has been modified such that the `GET /pets` response body should only include the `name` and `id` of each pet, with no `tag`. The following definition was added to the appspec's schema definitions:
 
 ```yaml
 NamedPet:
