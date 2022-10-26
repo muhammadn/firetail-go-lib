@@ -143,7 +143,7 @@ Then attempting to:
    ```
    < HTTP/1.1 401 Unauthorized
    < Content-Type: text/plain
-   firetail - request did not satisfy security requirements: Security requirements failed, errors: invalid bearer token for MyBearerAuth
+   firetail - request did not satisfy security requirements: Security requirements failed, errors: no bearer token supplied for "MyBearerAuth"
    ```
 
 2. Delete the pet with an invalid JWT:
@@ -154,7 +154,7 @@ Then attempting to:
    ```
    < HTTP/1.1 401 Unauthorized
    < Content-Type: text/plain
-   firetail - request did not satisfy security requirements: Security requirements failed, errors: invalid bearer token for MyBearerAuth
+   firetail - request did not satisfy security requirements: Security requirements failed, errors: invalid bearer token for "MyBearerAuth"
    ```
 
 3. Delete the pet with a valid JWT:
