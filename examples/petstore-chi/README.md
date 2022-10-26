@@ -213,6 +213,13 @@ firetail - response status code invalid: 400
 ```
 
 
+
+#### Response Header Validation
+
+Response headers are not currently validated against your appspec, but will be in a future release.
+
+
+
 #### Response Body Validation
 
 This petstore example's appspec has been modified such that the `GET /pets` response body should only include the `name` and `id` of each pet, with no `tag`. The following definition was added to the appspec's schema definitions:
