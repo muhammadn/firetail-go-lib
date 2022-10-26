@@ -75,12 +75,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Pet'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
   /pets/{id}:
     get:
       summary: Returns a pet by ID
