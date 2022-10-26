@@ -40,12 +40,17 @@ func NewBatchLogger(options BatchLoggerOptions) *batchLogger {
 			if options.LogApiUrl == "" {
 				return nil
 			}
-			reqBuffer := bytes.NewBuffer([]byte{})
+			reqBytes := []byte{}
 			for _, entry := range batchBytes {
-				reqBuffer.Write(entry)
-				reqBuffer.Write([]byte("\n"))
+				reqBytes = append(reqBytes, entry...)
+				reqBytes = append(reqBytes, '\n')
 			}
-			resp, err := http.Post(options.LogApiUrl, "application/json", reqBuffer)
+			req, err := http.NewRequest("POST", options.LogApiUrl, bytes.NewBuffer(reqBytes))
+			if err != nil {
+				return err
+			}
+			req.Header.Set("x-ft-api-key", options.LogApiKey)
+			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
 				return err
 			}
