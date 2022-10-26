@@ -42,11 +42,12 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	}
 
 	// Create a batchLogger to pass all our log entries to
-	// TODO: change max log age to a minute
 	batchLogger := logging.NewBatchLogger(logging.BatchLoggerOptions{
 		MaxBatchSize:  1024 * 512,
-		MaxLogAge:     time.Second,
+		MaxLogAge:     time.Minute,
 		BatchCallback: options.LogBatchCallback,
+		LogApiKey:     options.LogApiKey,
+		LogApiUrl:     "https://api.logging.eu-west-1.sandbox.firetail.app/logs/bulk",
 	})
 
 	middleware := func(next http.Handler) http.Handler {

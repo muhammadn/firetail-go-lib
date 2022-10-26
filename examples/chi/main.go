@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 
 	firetail "github.com/FireTail-io/firetail-go-lib/middlewares/http"
@@ -17,6 +18,7 @@ var BasicAuthErr = errors.New("invalid authorization token")
 func main() {
 	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 		OpenapiSpecPath: "app-spec.yaml",
+		LogApiKey:       os.Getenv("firetail_api_key"),
 		ErrCallback: func(err firetail.ErrorAtRequest, w http.ResponseWriter, r *http.Request) {
 			// In our err handler, we can check if the err is a security error.
 			// If it is, we can then see if any of its suberrs correspond to that returned by our auth.
