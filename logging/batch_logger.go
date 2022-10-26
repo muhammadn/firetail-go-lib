@@ -1,8 +1,11 @@
 package logging
 
 import (
+	"bytes"
 	"encoding/json"
-	"log"
+	"errors"
+	"fmt"
+	"net/http"
 	"time"
 )
 
@@ -19,6 +22,7 @@ type BatchLoggerOptions struct {
 	MaxBatchSize  int                  // The maximum size of a batch in bytes
 	MaxLogAge     time.Duration        // The maximum age of a log item in a batch - once an item is older than this, the batch is passed to the callback
 	LogApiKey     string               // The API key used by the default BatchCallback used to send logs to the Firetail logging API
+	LogApiUrl     string               // The URL of the Firetail logging API endpoint to send log entries to
 	BatchCallback func([][]byte) error // An optional callback to which batches will be passed; the default callback sends logs to the Firetail logging API
 }
 
@@ -32,10 +36,28 @@ func NewBatchLogger(options BatchLoggerOptions) *batchLogger {
 
 	if options.BatchCallback == nil {
 		newLogger.batchCallback = func(batchBytes [][]byte) error {
-			// TODO: send to Firetail. If there's an err, we should re-queue
-			log.Printf("Sending %d log(s) using API key '%s'...", len(batchBytes), options.LogApiKey)
-			for i, entry := range batchBytes {
-				log.Printf("Entry #%d: %s\n", i, string(entry))
+			// If the URL to send
+			if options.LogApiUrl == "" {
+				return nil
+			}
+			reqBytes := []byte{}
+			for _, entry := range batchBytes {
+				reqBytes = append(reqBytes, entry...)
+				reqBytes = append(reqBytes, '\n')
+			}
+			req, err := http.NewRequest("POST", options.LogApiUrl, bytes.NewBuffer(reqBytes))
+			if err != nil {
+				return err
+			}
+			req.Header.Set("x-ft-api-key", options.LogApiKey)
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				return err
+			}
+			var res map[string]interface{}
+			json.NewDecoder(resp.Body).Decode(&res)
+			if res["message"] != "success" {
+				return errors.New(fmt.Sprintf("got err response from firetail api: %v", res))
 			}
 			return nil
 		}
@@ -70,11 +92,12 @@ func (l *batchLogger) worker() {
 			// Marshal the entry to bytes...
 			entryBytes, err := json.Marshal(newEntry)
 			if err != nil {
-				panic(err)
+				// TODO: log that we're skipping this entry?
+				continue
 			}
 
 			if len(entryBytes) > l.maxBatchSize {
-				// TODO: panic?
+				// TODO: log that we're skipping this entry?
 				continue
 			}
 
