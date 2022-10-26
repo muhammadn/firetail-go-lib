@@ -55,9 +55,10 @@ The Firetail middleware blocks:
 
   ```
   < HTTP/1.1 415 Unsupported Media Type
+  < Content-Type: text/plain
   firetail - /pets route does not support content type application/xml
   ```
-
+  
 - Requests made with path parameters that don't match the schema defined in your appspec:
   ```bash
   curl localhost:8080/pets/abc -v
