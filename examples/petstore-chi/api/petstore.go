@@ -80,6 +80,12 @@ func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// We check the pet's name isn't the empty string
+	if newPet.Name == "" {
+		sendPetstoreError(w, http.StatusBadRequest, "NewPet must have a name")
+		return
+	}
+
 	// We now have a pet, let's add it to our "database".
 
 	// We're always asynchronous, so lock unsafe operations below
