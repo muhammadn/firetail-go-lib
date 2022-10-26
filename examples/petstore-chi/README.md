@@ -140,13 +140,13 @@ firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 We can test this out by creating a pet:
 
 ```bash
-curl localhost:8080/pets -X POST -H "Content-Type: application/json" -d '{"name":"Hector"}' -v
+curl localhost:8080/pets -X POST -H "Content-Type: application/json" -d '{"name":"Freya"}' -v
 ```
 
 ```
 < HTTP/1.1 201 Created
 < Content-Type: application/json
-{"id":1001,"name":"Hector"}
+{"id":1001,"name":"Freya"}
 ```
 
 Then attempting to:
@@ -193,3 +193,93 @@ Then attempting to:
    < Content-Type: application/json
    null
    ```
+
+
+
+### Response Validation
+
+This petstore example's appspec has been modified such that the `GET /pets` response body should only include the `name` and `id` of each pet. The following definition was added to the appspec's schema definitions:
+
+```yaml
+NamedPet:
+  required:
+    - id
+    - name
+  additionalProperties: false
+  properties:
+    id:
+      type: integer
+      format: int64
+      description: Unique id of the pet
+    name:
+      type: string
+      description: Name of the pet
+```
+
+And the `GET /pets` response was updated to use the above definition:
+
+```yaml
+'200':
+  description: pet response
+  content:
+    application/json:
+      schema:
+        type: array
+        nullable: true
+        items:
+          $ref: '#/components/schemas/NamedPet'
+```
+
+This allows us to test out the response body validation by:
+
+1. Creating a pet with a tag:
+
+   ```bash
+   curl localhost:8080/pets -X POST -H "Content-Type: application/json" -d '{"name":"Zopie","tag":"Sleepy"}' -v
+   ```
+
+   ```
+   < HTTP/1.1 201 Created
+   < Content-Type: application/json
+   {"id":1000,"name":"Zopie","tag":"Sleepy"}
+   ```
+
+2. Making a `GET` request to `/pets`:
+   ```bash
+   curl localhost:8080/pets -v
+   ```
+
+   ```
+   < HTTP/1.1 500 Internal Server Error
+   < Content-Type: text/plain
+   firetail - response body invalid: response body doesn't match the schema: Error at "/1": property "tag" is unsupported
+   Schema:
+     {
+       "additionalProperties": false,
+       "properties": {
+         "id": {
+           "description": "Unique id of the pet",
+           "format": "int64",
+           "type": "integer"
+         },
+         "name": {
+           "description": "Name of the pet",
+           "type": "string"
+         }
+       },
+       "required": [
+         "id",
+         "name"
+       ]
+     }
+   
+   Value:
+     {
+       "id": 1000,
+       "name": "Zopie",
+       "tag": "Sleepy"
+     }
+   ```
+
+   
+

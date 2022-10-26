@@ -50,7 +50,7 @@ paths:
                 type: array
                 nullable: true
                 items:
-                  $ref: '#/components/schemas/Pet'
+                  $ref: '#/components/schemas/NamedPet'
         default:
           description: unexpected error
           content:
@@ -147,6 +147,20 @@ components:
               type: integer
               format: int64
               description: Unique id of the pet
+
+    NamedPet:
+      required:
+        - id
+        - name
+      additionalProperties: false
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique id of the pet
+        name:
+          type: string
+          description: Name of the pet
 
     NewPet:
       required:
