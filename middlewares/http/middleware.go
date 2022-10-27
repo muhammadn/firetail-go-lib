@@ -162,7 +162,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 					// If the validation fails due to a security requirement, we pass a SecurityRequirementsError to the ErrCallback
 					if err, isSecurityErr := err.(*openapi3filter.SecurityRequirementsError); isSecurityErr {
-						options.ErrCallback(ErrorAuthNoMatchingSchema{err}, localResponseWriter, r)
+						options.ErrCallback(ErrorAuthNoMatchingScheme{err}, localResponseWriter, r)
 						return
 					}
 

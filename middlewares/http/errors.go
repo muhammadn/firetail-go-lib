@@ -142,15 +142,15 @@ func (e ErrorRequestBodyInvalid) Error() string {
 }
 
 // ErrorAuthNoMatchingSchema is used when a request doesn't satisfy any of the securitySchemes corresponding to the route that the request matched in the OpenAPI spec
-type ErrorAuthNoMatchingSchema struct {
+type ErrorAuthNoMatchingScheme struct {
 	Err *openapi3filter.SecurityRequirementsError
 }
 
-func (e ErrorAuthNoMatchingSchema) StatusCode() int {
+func (e ErrorAuthNoMatchingScheme) StatusCode() int {
 	return 401
 }
 
-func (e ErrorAuthNoMatchingSchema) Error() string {
+func (e ErrorAuthNoMatchingScheme) Error() string {
 	errString := fmt.Sprintf("firetail - request did not satisfy security requirements: %s, errors: ", e.Err.Error())
 	for i, err := range e.Err.Errors {
 		errString += err.Error()
