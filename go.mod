@@ -4,11 +4,11 @@ go 1.19
 
 require (
 	github.com/getkin/kin-openapi v0.103.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/stretchr/testify v1.8.0
 )
 
 require (
-	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/labstack/echo/v4 v4.7.2 // indirect
