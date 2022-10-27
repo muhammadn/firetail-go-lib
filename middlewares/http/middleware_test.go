@@ -326,7 +326,7 @@ func TestRequestWithMissingAuth(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"{\"code\":401,\"message\":\"firetail - request did not satisfy security requirements: Security requirements failed, errors: invalid API key\"}",
+		"{\"code\":401,\"message\":\"firetail - request did not satisfy security requirements: Security requirements failed, errors: invalid API key, invalid API key\"}",
 		string(respBody),
 	)
 }
@@ -365,7 +365,7 @@ func TestRequestWithInvalidAuth(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"{\"code\":401,\"message\":\"firetail - request did not satisfy security requirements: Security requirements failed, errors: invalid API key\"}",
+		"{\"code\":401,\"message\":\"firetail - request did not satisfy security requirements: Security requirements failed, errors: invalid API key, invalid API key\"}",
 		string(respBody),
 	)
 }
