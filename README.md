@@ -46,7 +46,7 @@ components:
 Your `AuthCallback` could look like this:
 
 ```go
-AuthCallbacks: map[string]func(){
+AuthCallbacks: map[string]func(context.Context, *openapi3filter.AuthenticationInput){
 	func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 		token := ai.RequestValidationInput.Request.Header.Get("Authorization")
 		return validateBasicAuthToken(token)
