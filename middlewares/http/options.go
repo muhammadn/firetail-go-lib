@@ -17,6 +17,10 @@ type Options struct {
 	// in from an environment variable.
 	LogApiKey string
 
+	// LogApiUrl is the URL of the Firetail logging API endpoint to which logs will be sent. This value should typically be loaded in from
+	// an environment variable.
+	LogApiUrl string
+
 	// LogBatchCallback is an optional callback which is provided with a batch of Firetail log entries ready to be sent to Firetail. The
 	// default callback sends log entries to the Firetail logging API. It may be customised to, for example, additionally log the entries
 	// to a file on disk. If it returns a non-nil error, the batch will be retried later.
@@ -49,6 +53,10 @@ type Options struct {
 }
 
 func (o *Options) setDefaults() {
+	if o.LogApiUrl == "" {
+		o.LogApiUrl = "https://api.logging.eu-west-1.sandbox.firetail.app/logs/bulk"
+	}
+
 	if o.ErrCallback == nil {
 		o.ErrCallback = func(errAtRequest ErrorAtRequest, w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("Content-Type", "application/json")
