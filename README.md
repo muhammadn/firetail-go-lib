@@ -31,14 +31,14 @@ middleware, err := firetail.GetMiddleware(&firetail.Options{
 
 ## Authentication
 
-If you use `securitySchemes` in your OpenAPI specification, you will need to populate the `firetail.Options` struct's `AuthCallback` field with your authentication logic. It is your responsibility to route the names of the security schemes in your OpenAPI specification to the appropriate authentication logic.
+If you use `securitySchemes` in your OpenAPI specification, you will need to populate the `firetail.Options` struct's `AuthCallbacks` field with a callback for each security scheme implementing your authentication logic.
 
 For example, for the following `securitySchemes`:
 
 ```yaml
 components:
   securitySchemes:
-    BasicAuth:
+    MyBasicAuth:
       type: http
       scheme: basic
 ```
@@ -46,13 +46,11 @@ components:
 Your `AuthCallback` could look like this:
 
 ```go
-AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
-  switch ai.SecuritySchemeName {
-    case "MyBasicAuth":
-    return handleBasicAuth(ctx, ai)
-    default:
-    return errors.New("security scheme not implemented")
-  }
+AuthCallbacks: map[string]func(){
+	func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
+		token := ai.RequestValidationInput.Request.Header.Get("Authorization")
+		return validateBasicAuthToken(token)
+    }
 },
 ```
 
@@ -60,7 +58,7 @@ AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) 
 
 ### Custom Auth Error Responses
 
-In order to customise the errors returned by your application when a request fails to authenticate, you can pick up the errors returned by your `AuthCallback` in a custom `ErrHandler`. This allows you to, for example, add the `WWW-Authenticate` header on responses to requests that fail to validate against a basic auth security requirement:
+In order to customise the errors returned by your application when a request fails to authenticate, you can pick up the errors returned by your `AuthCallbacks` in a custom `ErrHandler`. This allows you to, for example, add the `WWW-Authenticate` header on responses to requests that fail to validate against a basic auth security requirement:
 
 ```go
 // We'll use this err when the basic auth fails to validate.
@@ -71,16 +69,13 @@ firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 
 	// First, let's write our auth callback which, if the name of the security scheme it's being asked to check
 	// is 'MyBasicAuth', will check that the Authorization header contains the b64 encoding of 'admin:password'.
-	AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
-		switch ai.SecuritySchemeName {
-		case "MyBasicAuth":
+  	AuthCallbacks: map[string]func(context.Context, *openapi3filter.AuthenticationInput){
+    	"MyBasicAuth": func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 			token := ai.RequestValidationInput.Request.Header.Get("Authorization")
 			if token != "Basic YWRtaW46cGFzc3dvcmQ=" {
 				return BasicAuthErr
 			}
 			return nil
-		default:
-			return errors.New("security scheme not implemented")
 		}
 	},
 
