@@ -6,7 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"sync"
+	"time"
+
+	"github.com/golang-jwt/jwt"
 )
 
 type PetStore struct {
@@ -135,4 +139,22 @@ func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) {
 	delete(p.Pets, id)
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (p *PetStore) Auth(w http.ResponseWriter, r *http.Request) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"iat": time.Now().Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	if err != nil {
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("{\"code\":500,\"message\":\"%s\"}", err.Error())))
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(200)
+	w.Write([]byte(fmt.Sprintf("{\"token\":\"%s\"}", tokenString)))
 }
