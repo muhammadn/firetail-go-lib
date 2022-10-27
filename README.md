@@ -50,7 +50,7 @@ AuthCallbacks: map[string]func(context.Context, *openapi3filter.AuthenticationIn
 	func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 		token := ai.RequestValidationInput.Request.Header.Get("Authorization")
 		return validateBasicAuthToken(token)
-    }
+	}
 },
 ```
 
@@ -69,8 +69,8 @@ firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 
 	// First, let's write our auth callback which, if the name of the security scheme it's being asked to check
 	// is 'MyBasicAuth', will check that the Authorization header contains the b64 encoding of 'admin:password'.
-  	AuthCallbacks: map[string]func(context.Context, *openapi3filter.AuthenticationInput){
-    	"MyBasicAuth": func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
+	AuthCallbacks: map[string]func(context.Context, *openapi3filter.AuthenticationInput){
+		"MyBasicAuth": func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 			token := ai.RequestValidationInput.Request.Header.Get("Authorization")
 			if token != "Basic YWRtaW46cGFzc3dvcmQ=" {
 				return BasicAuthErr
