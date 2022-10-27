@@ -50,7 +50,7 @@ AuthCallbacks: map[string]func(context.Context, *openapi3filter.AuthenticationIn
 	"MyBasicAuth": func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 		token := ai.RequestValidationInput.Request.Header.Get("Authorization")
 		return validateBasicAuthToken(token)
-	}
+	},
 },
 ```
 
@@ -76,7 +76,7 @@ firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 				return BasicAuthErr
 			}
 			return nil
-		}
+		},
 	},
 
 	// Then, in our ErrCallback, we can check if the error it's received is a security error. If it is, and 
