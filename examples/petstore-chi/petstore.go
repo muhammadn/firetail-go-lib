@@ -18,6 +18,7 @@ import (
 	firetail "github.com/FireTail-io/firetail-go-lib/middlewares/http"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/go-chi/chi/v5"
+	"github.com/golang-jwt/jwt"
 )
 
 func main() {
@@ -50,11 +51,25 @@ func main() {
 				if authHeaderValue == "" {
 					return errors.New("no bearer token supplied for \"MyBearerAuth\"")
 				}
+
 				tokenParts := strings.Split(authHeaderValue, " ")
-				if len(tokenParts) != 2 || strings.ToUpper(tokenParts[0]) != "BEARER" || tokenParts[1] != "header.payload.signature" {
-					return errors.New("invalid bearer token for \"MyBearerAuth\"")
+				if len(tokenParts) != 2 || strings.ToUpper(tokenParts[0]) != "BEARER" {
+					return errors.New("invalid value in Authorization header for \"MyBearerAuth\"")
 				}
-				return nil
+
+				token, err := jwt.Parse(tokenParts[1], func(token *jwt.Token) (interface{}, error) {
+					if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+						return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+					}
+					hmacSampleSecret := []byte(os.Getenv("JWT_SECRET_KEY"))
+					return hmacSampleSecret, nil
+				})
+
+				if !token.Valid {
+					return errors.New("invalid jwt supplied for \"MyBearerAuth\"")
+				}
+
+				return err
 			},
 		},
 	},
