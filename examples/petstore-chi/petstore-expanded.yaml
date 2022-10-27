@@ -124,6 +124,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /auth:
+    get:
+      summary: Provides a JWT token
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  token:
+                    type: string
+                    format: JWT
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   securitySchemes:
     MyBearerAuth:
