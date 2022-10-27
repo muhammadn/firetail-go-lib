@@ -72,8 +72,7 @@ func main() {
 				return err
 			},
 		},
-	},
-	)
+	})
 	if err != nil {
 		panic(err)
 	}
