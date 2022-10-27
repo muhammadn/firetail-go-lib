@@ -44,9 +44,8 @@ func main() {
 	// OpenAPI schema.
 	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 		OpenapiSpecPath: "./petstore-expanded.yaml",
-		AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
-			switch ai.SecuritySchemeName {
-			case "MyBearerAuth":
+		AuthCallbacks: map[string]openapi3filter.AuthenticationFunc{
+			"MyBearerAuth": func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 				authHeaderValue := ai.RequestValidationInput.Request.Header.Get("Authorization")
 				if authHeaderValue == "" {
 					return errors.New("no bearer token supplied for \"MyBearerAuth\"")
@@ -56,11 +55,10 @@ func main() {
 					return errors.New("invalid bearer token for \"MyBearerAuth\"")
 				}
 				return nil
-			default:
-				return errors.New(fmt.Sprintf("security scheme \"%s\" not implemented", ai.SecuritySchemeName))
-			}
+			},
 		},
-	})
+	},
+	)
 	if err != nil {
 		panic(err)
 	}

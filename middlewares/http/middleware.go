@@ -128,7 +128,13 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 					PathParams: pathParams,
 					Route:      route,
 					Options: &openapi3filter.Options{
-						AuthenticationFunc: options.AuthCallback,
+						AuthenticationFunc: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
+							authCallback, hasAuthCallback := options.AuthCallbacks[ai.SecuritySchemeName]
+							if !hasAuthCallback {
+								return ErrorAuthSchemeNotImplemented{ai.SecuritySchemeName}
+							}
+							return authCallback(ctx, ai)
+						},
 					},
 				}
 				err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)

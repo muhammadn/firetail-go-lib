@@ -161,6 +161,19 @@ func (e ErrorAuthNoMatchingScheme) Error() string {
 	return errString
 }
 
+// ErrorAuthSchemaNotImplemented is used when a request is made to a path that has a security scheme requirement that has not been implemented in the application
+type ErrorAuthSchemeNotImplemented struct {
+	MissingScheme string
+}
+
+func (e ErrorAuthSchemeNotImplemented) StatusCode() int {
+	return 500
+}
+
+func (e ErrorAuthSchemeNotImplemented) Error() string {
+	return fmt.Sprintf("security scheme '%s' has not been implemented in the application", e.MissingScheme)
+}
+
 // ErrorResponseHeadersInvalid is used when any of the headers of a response don't conform to the schema in the OpenAPI spec
 // Currently not implemented as the underlying kin-openapi module doesn't perform response header validation.
 // See the open issue here: https://github.com/getkin/kin-openapi/issues/201
