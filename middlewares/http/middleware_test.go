@@ -307,6 +307,38 @@ func TestRequestWithValidAuth(t *testing.T) {
 	)
 }
 
+func TestRequestWithUnimplementedAuth(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		OpenapiSpecPath: "./test-spec.yaml",
+	})
+	require.Nil(t, err)
+	handler := middleware(healthHandler)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented/1",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
+	)
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("X-Api-Key", "valid-api-key")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 401, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "application/json", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(
+		t,
+		"{\"code\":401,\"message\":\"firetail - request did not satisfy security requirements: Security requirements failed, errors: firetail - security scheme 'ApiKeyAuth1' has not been implemented in the application, firetail - security scheme 'ApiKeyAuth2' has not been implemented in the application\"}",
+		string(respBody),
+	)
+}
+
 func TestRequestWithMissingAuth(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec.yaml",

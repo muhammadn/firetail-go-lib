@@ -166,12 +166,8 @@ type ErrorAuthSchemeNotImplemented struct {
 	MissingScheme string
 }
 
-func (e ErrorAuthSchemeNotImplemented) StatusCode() int {
-	return 500
-}
-
 func (e ErrorAuthSchemeNotImplemented) Error() string {
-	return fmt.Sprintf("security scheme '%s' has not been implemented in the application", e.MissingScheme)
+	return fmt.Sprintf("firetail - security scheme '%s' has not been implemented in the application", e.MissingScheme)
 }
 
 // ErrorResponseHeadersInvalid is used when any of the headers of a response don't conform to the schema in the OpenAPI spec
