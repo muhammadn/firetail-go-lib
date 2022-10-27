@@ -47,7 +47,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 		MaxLogAge:     time.Minute,
 		BatchCallback: options.LogBatchCallback,
 		LogApiKey:     options.LogApiKey,
-		LogApiUrl:     "https://api.logging.eu-west-1.sandbox.firetail.app/logs/bulk",
+		LogApiUrl:     options.LogApiUrl,
 	})
 
 	middleware := func(next http.Handler) http.Handler {
@@ -128,7 +128,13 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 					PathParams: pathParams,
 					Route:      route,
 					Options: &openapi3filter.Options{
-						AuthenticationFunc: options.AuthCallback,
+						AuthenticationFunc: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
+							authCallback, hasAuthCallback := options.AuthCallbacks[ai.SecuritySchemeName]
+							if !hasAuthCallback {
+								return ErrorAuthSchemeNotImplemented{ai.SecuritySchemeName}
+							}
+							return authCallback(ctx, ai)
+						},
 					},
 				}
 				err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
@@ -162,7 +168,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 					// If the validation fails due to a security requirement, we pass a SecurityRequirementsError to the ErrCallback
 					if err, isSecurityErr := err.(*openapi3filter.SecurityRequirementsError); isSecurityErr {
-						options.ErrCallback(ErrorAuthNoMatchingSchema{err}, localResponseWriter, r)
+						options.ErrCallback(ErrorAuthNoMatchingScheme{err}, localResponseWriter, r)
 						return
 					}
 

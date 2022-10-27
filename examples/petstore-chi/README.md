@@ -105,7 +105,7 @@ The Firetail middleware blocks:
 
 ### Authentication
 
-The petstore appspec has been modified to apply the following security scheme to the `DELETE /pets/{id}` endpoint: 
+The petstore appspec has been modified to provide a `GET /auth` endpoint which provides a JWT, and apply the following security scheme to the `DELETE /pets/{id}` endpoint: 
 
 ```yaml
 securitySchemes:
@@ -115,26 +115,37 @@ securitySchemes:
     bearerFormat: JWT
 ```
 
-This was implemented in the application by simply defining an `AuthCallback` and providing it to the Firetail middleware as follows:
+The validation of this security scheme was implemented in the application by simply defining an `AuthCallback` and providing it to the Firetail middleware as follows:
 
 ```go
 firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 	OpenapiSpecPath: "./petstore-expanded.yaml",
-	AuthCallback: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
-		switch ai.SecuritySchemeName {
-		case "MyBearerAuth":
+	AuthCallbacks: map[string]openapi3filter.AuthenticationFunc{
+		"MyBearerAuth": func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 			authHeaderValue := ai.RequestValidationInput.Request.Header.Get("Authorization")
 			if authHeaderValue == "" {
 				return errors.New("no bearer token supplied for \"MyBearerAuth\"")
 			}
+
 			tokenParts := strings.Split(authHeaderValue, " ")
-			if len(tokenParts) != 2 || strings.ToUpper(tokenParts[0]) != "BEARER" || tokenParts[1] != "header.payload.signature" {
-				return errors.New("invalid bearer token for \"MyBearerAuth\"")
+			if len(tokenParts) != 2 || strings.ToUpper(tokenParts[0]) != "BEARER" {
+				return errors.New("invalid value in Authorization header for \"MyBearerAuth\"")
 			}
-			return nil
-		default:
-			return errors.New(fmt.Sprintf("security scheme \"%s\" not implemented", ai.SecuritySchemeName))
-		}
+
+			token, err := jwt.Parse(tokenParts[1], func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+				}
+				hmacSampleSecret := []byte(os.Getenv("JWT_SECRET_KEY"))
+				return hmacSampleSecret, nil
+			})
+
+			if !token.Valid {
+				return errors.New("invalid jwt supplied for \"MyBearerAuth\"")
+			}
+
+			return err
+		},
 	},
 })
 ```

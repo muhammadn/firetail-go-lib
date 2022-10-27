@@ -17,6 +17,10 @@ type Options struct {
 	// in from an environment variable.
 	LogApiKey string
 
+	// LogApiUrl is the URL of the Firetail logging API endpoint to which logs will be sent. This value should typically be loaded in from
+	// an environment variable.
+	LogApiUrl string
+
 	// LogBatchCallback is an optional callback which is provided with a batch of Firetail log entries ready to be sent to Firetail. The
 	// default callback sends log entries to the Firetail logging API. It may be customised to, for example, additionally log the entries
 	// to a file on disk. If it returns a non-nil error, the batch will be retried later.
@@ -27,10 +31,10 @@ type Options struct {
 	// openapi spec, to be consistent with the format in which the rest of your application returns error responses
 	ErrCallback func(ErrorAtRequest, http.ResponseWriter, *http.Request)
 
-	// AuthenticationFunc is a callback func which must be defined if you wish to use security schemas in your openapi specification. See
-	// the openapi3filter package's reference for further documentation, and the Chi example for a demonstration of various auth types in use:
-	// https://github.com/FireTail-io/firetail-go-lib/tree/main/examples/chi
-	AuthCallback openapi3filter.AuthenticationFunc
+	// AuthCallbacks is a map of strings, which should match the names of your appspec's securitySchemes, to callback funcs which must be
+	// defined if you wish to use security schemas in your openapi specification. See the openapi3filter package's reference for further
+	// documentation
+	AuthCallbacks map[string]openapi3filter.AuthenticationFunc
 
 	// DisableRequestValidation is an optional flag which, if set to true, disables request validation
 	DisableRequestValidation bool
@@ -49,6 +53,10 @@ type Options struct {
 }
 
 func (o *Options) setDefaults() {
+	if o.LogApiUrl == "" {
+		o.LogApiUrl = "https://api.logging.eu-west-1.sandbox.firetail.app/logs/bulk"
+	}
+
 	if o.ErrCallback == nil {
 		o.ErrCallback = func(errAtRequest ErrorAtRequest, w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("Content-Type", "application/json")

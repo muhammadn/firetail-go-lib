@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/getkin/kin-openapi v0.103.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/stretchr/testify v1.8.0
 )
 

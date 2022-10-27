@@ -74,6 +74,9 @@ type ServerInterface interface {
 	// Returns a pet by ID
 	// (GET /pets/{id})
 	FindPetByID(w http.ResponseWriter, r *http.Request, id int64)
+	// Returns a JWT
+	// (POST /auth)
+	Auth(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -179,6 +182,21 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.FindPetByID(w, r, id)
+	})
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// Auth operation middleware
+func (siw *ServerInterfaceWrapper) Auth(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Auth(w, r)
 	})
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -312,6 +330,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/pets/{id}", wrapper.FindPetByID)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auth", wrapper.Auth)
 	})
 
 	return r
