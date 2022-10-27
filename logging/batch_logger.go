@@ -36,7 +36,6 @@ func NewBatchLogger(options BatchLoggerOptions) *batchLogger {
 
 	if options.BatchCallback == nil {
 		newLogger.batchCallback = func(batchBytes [][]byte) error {
-			// If the URL to send
 			if options.LogApiUrl == "" {
 				return nil
 			}
