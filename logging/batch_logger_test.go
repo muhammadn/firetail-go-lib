@@ -18,9 +18,8 @@ func SetupLogger(batchChannel chan *[][]byte, maxBatchSize int, maxLogAge time.D
 	})
 
 	// Replace the batchHandler with a custom one to throw the batches into a queue that we can receive from for testing
-	batchLogger.batchCallback = func(b [][]byte) error {
+	batchLogger.batchCallback = func(b [][]byte) {
 		batchChannel <- &b
-		return nil
 	}
 
 	return batchLogger

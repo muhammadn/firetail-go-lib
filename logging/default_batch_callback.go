@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 )
 
-func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) error {
-	return func(batchBytes [][]byte) error {
+func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
+	sendBatch := func(batchBytes [][]byte) error {
 		if options.LogApiUrl == "" {
 			return errors.New("no log api url set")
 		}
@@ -33,5 +34,19 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) error {
 			return errors.New(fmt.Sprintf("got err response from firetail api: %v", res))
 		}
 		return nil
+	}
+
+	return func(batch [][]byte) {
+		payload := ""
+		for _, entry := range batch {
+			payload += string(entry) + "\r\n"
+		}
+		log.Printf("Sending batch of len %d to Firetail. Payload:\n%s", len(batch), payload)
+
+		err := sendBatch(batch)
+
+		if err != nil {
+			log.Printf("Err calling batchcallback: %s", err.Error())
+		}
 	}
 }

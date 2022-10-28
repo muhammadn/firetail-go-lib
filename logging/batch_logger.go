@@ -7,19 +7,19 @@ import (
 
 // A batchLogger receives log entries via its Enqueue method & arranges them into batches that it then passes to its batchHandler
 type batchLogger struct {
-	queue         chan *LogEntry       // A channel down which LogEntrys will be queued to be sent to Firetail
-	maxBatchSize  int                  // The maximum size of a batch in bytes
-	maxLogAge     time.Duration        // The maximum age of a log item to hold onto
-	batchCallback func([][]byte) error // A handler that takes a batch of log entries as a slice of slices of bytes & sends them to Firetail
+	queue         chan *LogEntry // A channel down which LogEntrys will be queued to be sent to Firetail
+	maxBatchSize  int            // The maximum size of a batch in bytes
+	maxLogAge     time.Duration  // The maximum age of a log item to hold onto
+	batchCallback func([][]byte) // A handler that takes a batch of log entries as a slice of slices of bytes & sends them to Firetail
 }
 
 // BatchLoggerOptions is an options struct used by the NewBatchLogger constructor
 type BatchLoggerOptions struct {
-	MaxBatchSize  int                  // The maximum size of a batch in bytes
-	MaxLogAge     time.Duration        // The maximum age of a log item in a batch - once an item is older than this, the batch is passed to the callback
-	LogApiKey     string               // The API key used by the default BatchCallback used to send logs to the Firetail logging API
-	LogApiUrl     string               // The URL of the Firetail logging API endpoint to send log entries to
-	BatchCallback func([][]byte) error // An optional callback to which batches will be passed; the default callback sends logs to the Firetail logging API
+	MaxBatchSize  int            // The maximum size of a batch in bytes
+	MaxLogAge     time.Duration  // The maximum age of a log item in a batch - once an item is older than this, the batch is passed to the callback
+	LogApiKey     string         // The API key used by the default BatchCallback used to send logs to the Firetail logging API
+	LogApiUrl     string         // The URL of the Firetail logging API endpoint to send log entries to
+	BatchCallback func([][]byte) // An optional callback to which batches will be passed; the default callback sends logs to the Firetail logging API
 }
 
 // NewBatchLogger creates a new batchLogger with the provided options
