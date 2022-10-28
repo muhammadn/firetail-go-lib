@@ -1,0 +1,8 @@
+go 1.19
+
+use (
+	.
+	./examples/minimal-chi
+	./examples/minimal-http
+	./examples/petstore-chi
+)
