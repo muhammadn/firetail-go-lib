@@ -1,0 +1,356 @@
+{
+	"info": {
+		"_postman_id": "8b83bd80-96fe-4cca-9a6c-dca6c8b283be",
+		"name": "Demo Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "24033084"
+	},
+	"item": [
+		{
+			"name": "Request Validation",
+			"item": [
+				{
+					"name": "Route not in appspec",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/owners",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"owners"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Method not in appspec",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/pets",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Content-Type not in appspec",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/xml"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><name>Hector</name></root>"
+						},
+						"url": {
+							"raw": "localhost:8080/pets",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid path parameters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/pets/abc",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets",
+								"abc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid query parameters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/pets?limit=abc",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "abc"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid request body",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":123}"
+						},
+						"url": {
+							"raw": "localhost:8080/pets",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "JWT Authentication",
+			"item": [
+				{
+					"name": "Create Freya",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Hector\"\n}"
+						},
+						"url": {
+							"raw": "localhost:8080/pets",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Attempt to delete Freya",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set(\"bearerToken\",\"\")"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/pets/1000",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets",
+								"1000"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get JWT",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set(\"bearerToken\", pm.response.json().token)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/auth",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"auth"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Freya",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:8080/pets/1000",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets",
+								"1000"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Response Validation",
+			"item": [
+				{
+					"name": "Response Body Validation",
+					"item": [
+						{
+							"name": "Create sleepy Zopie",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"name\":\"Zopie\",\"tag\":\"Sleepy\"}"
+								},
+								"url": {
+									"raw": "localhost:8080/pets",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"pets"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get list of pets",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/pets",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"pets"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Invalid response code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"\"}"
+						},
+						"url": {
+							"raw": "localhost:8080/pets",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pets"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "bearerToken",
+			"value": ""
+		}
+	]
+}
