@@ -215,9 +215,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var headerValue = pm.response.json().token",
-									"console.log(headerValue)",
-									"pm.collectionVariables.set(\"bearerToken\", headerValue)"
+									"pm.collectionVariables.set(\"bearerToken\", pm.response.json().token)"
 								],
 								"type": "text/javascript"
 							}
