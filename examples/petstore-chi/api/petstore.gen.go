@@ -80,6 +80,9 @@ type ServerInterface interface {
 	// Returns owner info
 	// (GET /owners)
 	Owners(w http.ResponseWriter, r *http.Request)
+	// Deletes all pets
+	// (DELETE /pets)
+	DeletePets(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -224,6 +227,21 @@ func (siw *ServerInterfaceWrapper) Owners(w http.ResponseWriter, r *http.Request
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
+// DeletePets operation middleware
+func (siw *ServerInterfaceWrapper) DeletePets(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePets(w, r)
+	})
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -354,6 +372,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/owners", wrapper.Owners)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/pets", wrapper.DeletePets)
 	})
 
 	return r
