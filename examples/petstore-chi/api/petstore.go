@@ -158,3 +158,9 @@ func (p *PetStore) Auth(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Write([]byte(fmt.Sprintf("{\"token\":\"%s\"}", tokenString)))
 }
+
+func (p *PetStore) Owners(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(200)
+	w.Write([]byte(`{"message":"Oh no, this information shouldn't be public!"}`))
+}

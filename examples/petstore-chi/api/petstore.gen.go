@@ -77,6 +77,9 @@ type ServerInterface interface {
 	// Returns a JWT
 	// (POST /auth)
 	Auth(w http.ResponseWriter, r *http.Request)
+	// Returns owner info
+	// (GET /owners)
+	Owners(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -197,6 +200,21 @@ func (siw *ServerInterfaceWrapper) Auth(w http.ResponseWriter, r *http.Request) 
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Auth(w, r)
+	})
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// Owner operation middleware
+func (siw *ServerInterfaceWrapper) Owners(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Owners(w, r)
 	})
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -333,6 +351,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/auth", wrapper.Auth)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/owners", wrapper.Owners)
 	})
 
 	return r
