@@ -64,12 +64,13 @@ func main() {
 					hmacSampleSecret := []byte(os.Getenv("JWT_SECRET_KEY"))
 					return hmacSampleSecret, nil
 				})
-
-				if !token.Valid {
+				if err != nil {
+					return err
+				} else if !token.Valid {
 					return errors.New("invalid jwt supplied for \"MyBearerAuth\"")
 				}
 
-				return err
+				return nil
 			},
 		},
 	})
