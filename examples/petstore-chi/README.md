@@ -33,8 +33,8 @@ The Firetail middleware blocks:
 
   ```
   < HTTP/1.1 404 Not Found
-  < Content-Type: text/plain
-  firetail - no matching path found for "/owners"
+  < Content-Type: application/json
+  {"code":404,"title":"the resource \"/owners\" could not be found","detail":"a path for \"/owners\" could not be found in your appspec"}
   ```
 
 - Requests made to paths that are defined in your appspec, but are made with unsupported methods:
@@ -45,7 +45,7 @@ The Firetail middleware blocks:
   ```
   < HTTP/1.1 405 Method Not Allowed
   < Content-Type: text/plain
-  firetail - "/pets" path does not support DELETE method
+  {"code":405,"title":"the resource \"/pets\" does not support the \"DELETE\" method","detail":"the path for \"/pets\" in your appspec does not support the method \"DELETE\""}
   ```
 
 - Requests made to paths defined in your appspec, with methods defined in your appspec, but with a `Content-Type` that hasn't been defined in your appspec:
@@ -56,7 +56,7 @@ The Firetail middleware blocks:
   ```
   < HTTP/1.1 415 Unsupported Media Type
   < Content-Type: text/plain
-  firetail - /pets route does not support content type application/xml
+  {"code":415,"title":"the path for \"/pets\" in your appspec does not support the content type \"application/xml\"","detail":"the path for \"/pets\" in your appspec does not support content type \"application/xml\""}
   ```
   
 - Requests made with path parameters that don't match the schema defined in your appspec:
@@ -67,18 +67,18 @@ The Firetail middleware blocks:
   ```
   < HTTP/1.1 400 Bad Request
   < Content-Type: text/plain
-  firetail - request path parameter invalid: parameter "id" in path has an error: value abc: an invalid integer: invalid syntax
+  {"code":400,"title":"something's wrong with your path parameters","detail":"the request's path parameters did not match your appspec: parameter \"id\" in path has an error: value abc: an invalid integer: invalid syntax"}
   ```
 
 - Requests made with query parameters that don't match the schema defined in your appspec:
   ```bash
-  curl localhost:8080/pets?limit=abc -v
+  curl "localhost:8080/pets?limit=abc" -v
   ```
 
   ```
   < HTTP/1.1 400 Bad Request
   < Content-Type: text/plain
-  firetail - request query parameter invalid: parameter "limit" in query has an error: value abc: an invalid integer: invalid syntax
+  {"code":400,"title":"something's wrong with your query parameters","detail":"the request's query parameters did not match your appspec: parameter \"limit\" in query has an error: value abc: an invalid integer: invalid syntax"}
   ```
 
 - Requests made with bodies that don't match the schema defined in your appspec:
@@ -90,15 +90,7 @@ The Firetail middleware blocks:
   ```
   < HTTP/1.1 400 Bad Request
   < Content-Type: text/plain
-  firetail - request body invalid: request body has an error: doesn't match the schema: Error at "/name": Field must be set to string or not be present
-  Schema:
-    {
-      "description": "Name of the pet",
-      "type": "string"
-    }
-  
-  Value:
-    "number, integer"
+  {"code":400,"title":"something's wrong with your request body","detail":"the request's body did not match your appspec: request body has an error: doesn't match the schema: Error at \"/name\": Field must be set to string or not be present\nSchema:\n  {\n    \"description\": \"Name of the pet\",\n    \"type\": \"string\"\n  }\n\nValue:\n  \"number, integer\"\n"}
   ```
 
 
@@ -120,6 +112,7 @@ The validation of this security scheme was implemented in the application by sim
 ```go
 firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 	OpenapiSpecPath: "./petstore-expanded.yaml",
+  DebugErrs: true,
 	AuthCallbacks: map[string]openapi3filter.AuthenticationFunc{
 		"MyBearerAuth": func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 			authHeaderValue := ai.RequestValidationInput.Request.Header.Get("Authorization")
@@ -159,7 +152,7 @@ curl localhost:8080/pets -X POST -H "Content-Type: application/json" -d '{"name"
 ```
 < HTTP/1.1 201 Created
 < Content-Type: application/json
-{"id":1001,"name":"Freya"}
+{"id":1000,"name":"Freya"}
 ```
 
 Then attempting to:
@@ -172,7 +165,7 @@ Then attempting to:
    ```
    < HTTP/1.1 401 Unauthorized
    < Content-Type: text/plain
-   firetail - request did not satisfy security requirements: Security requirements failed, errors: no bearer token supplied for "MyBearerAuth"
+   {"code":401,"title":"you're not authorized to do this","detail":"the request did not satisfy the security requirements in your appspec: security requirements failed: no bearer token supplied for \"MyBearerAuth\", errors: no bearer token supplied for \"MyBearerAuth\""}
    ```
 
 2. Delete the pet with an invalid JWT:
@@ -183,12 +176,24 @@ Then attempting to:
    ```
    < HTTP/1.1 401 Unauthorized
    < Content-Type: text/plain
-   firetail - request did not satisfy security requirements: Security requirements failed, errors: invalid bearer token for "MyBearerAuth"
+   {"code":401,"title":"you're not authorized to do this","detail":"the request did not satisfy the security requirements in your appspec: security requirements failed: invalid jwt supplied for \"MyBearerAuth\", errors: invalid jwt supplied for \"MyBearerAuth\""}
    ```
 
-3. Delete the pet with a valid JWT:
+3. Get a valid JWT from the petstore's `/auth` endpoint:
    ```bash
-   curl localhost:8080/pets/1000 -X DELETE -H "Authorization: bearer header.payload.signature" -v
+   curl localhost:8080/auth -v
+   ```
+
+   ```
+   < HTTP/1.1 200 OK
+   < Content-Type: application/json
+   {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Njk5ODA5MzR9.qDqP_r2hmrrGE3mWJbKoYK_Agz76Q57WntdGHfYc1F8"}
+   ```
+
+4. Delete the pet with a valid JWT:
+
+   ```bash
+   curl localhost:8080/pets/1000 -X DELETE -H "Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Njk5ODA5MzR9.qDqP_r2hmrrGE3mWJbKoYK_Agz76Q57WntdGHfYc1F8" -v
    ```
 
    ```
@@ -227,8 +232,8 @@ curl localhost:8080/pets -X POST -H "Content-Type: application/json" -d '{"name"
 
 ```
 < HTTP/1.1 500 Internal Server Error
-< Content-Type: text/plain
-firetail - response status code invalid: 400
+< Content-Type: application/json
+{"code":500,"title":"internal server error","detail":"the response's status code did not match your appspec: 400"}
 ```
 
 
@@ -241,7 +246,7 @@ Response headers are not currently validated against your appspec, but will be i
 
 #### Response Body Validation
 
-This petstore example's appspec has been modified such that the `GET /pets` response body should only include the `name` and `id` of each pet, with no `tag`. The following definition was added to the appspec's schema definitions:
+This petstore example's appspec has been modified such that the `GET /pets` response body should only include the `name` and `id` of each pet, with no `owner`. The following definition was added to the appspec's schema definitions:
 
 ```yaml
 NamedPet:
@@ -275,16 +280,16 @@ And the `GET /pets` response was updated to use the above definition:
 
 This allows us to test out the response body validation by:
 
-1. Creating a pet with a tag:
+1. Creating a pet with an owner:
 
    ```bash
-   curl localhost:8080/pets -X POST -H "Content-Type: application/json" -d '{"name":"Zopie","tag":"Sleepy"}' -v
+   curl localhost:8080/pets -X POST -H "Content-Type: application/json" -d '{"name":"Spot","owner":"Data"}' -v
    ```
 
    ```
    < HTTP/1.1 201 Created
    < Content-Type: application/json
-   {"id":1000,"name":"Zopie","tag":"Sleepy"}
+   {"id":1000,"name":"Spot","owner":"Data"}
    ```
 
 2. Making a `GET` request to `/pets`:
@@ -295,33 +300,7 @@ This allows us to test out the response body validation by:
    ```
    < HTTP/1.1 500 Internal Server Error
    < Content-Type: text/plain
-   firetail - response body invalid: response body doesn't match the schema: Error at "/1": property "tag" is unsupported
-   Schema:
-     {
-       "additionalProperties": false,
-       "properties": {
-         "id": {
-           "description": "Unique id of the pet",
-           "format": "int64",
-           "type": "integer"
-         },
-         "name": {
-           "description": "Name of the pet",
-           "type": "string"
-         }
-       },
-       "required": [
-         "id",
-         "name"
-       ]
-     }
-   
-   Value:
-     {
-       "id": 1000,
-       "name": "Zopie",
-       "tag": "Sleepy"
-     }
+   {"code":500,"title":"internal server error","detail":"the response's body did not match your appspec: response body doesn't match the schema: Error at \"/0\": property \"owner\" is unsupported\nSchema:\n  {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"id\": {\n        \"description\": \"Unique id of the pet\",\n        \"format\": \"int64\",\n        \"type\": \"integer\"\n      },\n      \"name\": {\n        \"description\": \"Name of the pet\",\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"id\",\n      \"name\"\n    ]\n  }\n\nValue:\n  {\n    \"id\": 1000,\n    \"name\": \"Spot\",\n    \"owner\": \"Data\"\n  }\n"}
    ```
-
+   
    
