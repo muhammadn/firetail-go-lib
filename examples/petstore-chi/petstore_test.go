@@ -42,10 +42,10 @@ func TestPetStore(t *testing.T) {
 	api.HandlerFromMux(store, r)
 
 	t.Run("Add pet", func(t *testing.T) {
-		tag := "TagOfSpot"
+		owner := "Data"
 		newPet := api.NewPet{
-			Name: "Spot",
-			Tag:  &tag,
+			Name:  "Spot",
+			Owner: &owner,
 		}
 
 		rr := testutil.NewRequest().Post("/pets").WithJsonBody(newPet).GoWithHTTPHandler(t, r).Recorder
@@ -55,7 +55,7 @@ func TestPetStore(t *testing.T) {
 		err = json.NewDecoder(rr.Body).Decode(&resultPet)
 		assert.NoError(t, err, "error unmarshaling response")
 		assert.Equal(t, newPet.Name, resultPet.Name)
-		assert.Equal(t, *newPet.Tag, *resultPet.Tag)
+		assert.Equal(t, *newPet.Owner, *resultPet.Owner)
 	})
 
 	t.Run("Find pet by ID", func(t *testing.T) {
@@ -99,11 +99,11 @@ func TestPetStore(t *testing.T) {
 	})
 
 	t.Run("Filter pets by tag", func(t *testing.T) {
-		tag := "TagOfFido"
+		owner := "OwnerOfFido"
 
 		store.Pets = map[int64]api.Pet{
 			1: {
-				Tag: &tag,
+				Owner: &owner,
 			},
 			2: {},
 		}

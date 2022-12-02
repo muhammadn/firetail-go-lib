@@ -50,10 +50,10 @@ func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindP
 	var result []Pet
 
 	for _, pet := range p.Pets {
-		if params.Tags != nil {
-			// If we have tags,  filter pets by tag
-			for _, t := range *params.Tags {
-				if pet.Tag != nil && (*pet.Tag == t) {
+		if params.Owners != nil {
+			// If we have owners,  filter pets by owner
+			for _, t := range *params.Owners {
+				if pet.Owner != nil && (*pet.Owner == t) {
 					result = append(result, pet)
 				}
 			}
@@ -99,7 +99,7 @@ func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
 	// We handle pets, not NewPets, which have an additional ID field
 	var pet Pet
 	pet.Name = newPet.Name
-	pet.Tag = newPet.Tag
+	pet.Owner = newPet.Owner
 	pet.Id = p.NextId
 	p.NextId = p.NextId + 1
 
@@ -157,4 +157,16 @@ func (p *PetStore) Auth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
 	w.Write([]byte(fmt.Sprintf("{\"token\":\"%s\"}", tokenString)))
+}
+
+func (p *PetStore) Owners(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(200)
+	w.Write([]byte(`{"message":"Oh no, this information shouldn't be public!"}`))
+}
+
+func (p *PetStore) DeletePets(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(200)
+	w.Write([]byte(`{"message":"Oh no, all the pets are gone!"}`))
 }

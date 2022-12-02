@@ -24,6 +24,7 @@ import (
 func main() {
 	var port = flag.Int("port", 8080, "Port for test HTTP server")
 	flag.Parse()
+	log.Printf("Serving on port %d", *port)
 
 	swagger, err := api.GetSwagger()
 	if err != nil {
@@ -43,6 +44,21 @@ func main() {
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
+	r.Use(getFiretaiLMiddleware())
+
+	// We now register our petStore above as the handler for the interface
+	api.HandlerFromMux(petStore, r)
+
+	s := &http.Server{
+		Handler: r,
+		Addr:    fmt.Sprintf("0.0.0.0:%d", *port),
+	}
+
+	// And we serve HTTP until the world ends.
+	log.Fatal(s.ListenAndServe())
+}
+
+func getFiretaiLMiddleware() func(next http.Handler) http.Handler {
 	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 		OpenapiSpecPath: "./petstore-expanded.yaml",
 		AuthCallbacks: map[string]openapi3filter.AuthenticationFunc{
@@ -77,17 +93,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	r.Use(firetailMiddleware)
-
-	// We now register our petStore above as the handler for the interface
-	api.HandlerFromMux(petStore, r)
-
-	s := &http.Server{
-		Handler: r,
-		Addr:    fmt.Sprintf("0.0.0.0:%d", *port),
-	}
-
-	// And we serve HTTP until the world ends.
-	log.Fatal(s.ListenAndServe())
+	return firetailMiddleware
 }

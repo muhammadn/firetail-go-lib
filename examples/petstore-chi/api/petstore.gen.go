@@ -32,8 +32,8 @@ type NewPet struct {
 	// Name Name of the pet
 	Name string `json:"name"`
 
-	// Tag Type of the pet
-	Tag *string `json:"tag,omitempty"`
+	// Owner Type of the pet
+	Owner *string `json:"owner,omitempty"`
 }
 
 // Pet defines model for Pet.
@@ -44,14 +44,14 @@ type Pet struct {
 	// Name Name of the pet
 	Name string `json:"name"`
 
-	// Tag Type of the pet
-	Tag *string `json:"tag,omitempty"`
+	// Owner Type of the pet
+	Owner *string `json:"owner,omitempty"`
 }
 
 // FindPetsParams defines parameters for FindPets.
 type FindPetsParams struct {
-	// Tags tags to filter by
-	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
+	// Owners to filter by
+	Owners *[]string `form:"owners,omitempty" json:"owners,omitempty"`
 
 	// Limit maximum number of results to return
 	Limit *int32 `form:"limit,omitempty" json:"limit,omitempty"`
@@ -77,6 +77,12 @@ type ServerInterface interface {
 	// Returns a JWT
 	// (POST /auth)
 	Auth(w http.ResponseWriter, r *http.Request)
+	// Returns owner info
+	// (GET /owners)
+	Owners(w http.ResponseWriter, r *http.Request)
+	// Deletes all pets
+	// (DELETE /pets)
+	DeletePets(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -97,11 +103,11 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 	// Parameter object where we will unmarshal all parameters from the context
 	var params FindPetsParams
 
-	// ------------- Optional query parameter "tags" -------------
+	// ------------- Optional query parameter "owners" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "tags", r.URL.Query(), &params.Tags)
+	err = runtime.BindQueryParameter("form", true, false, "owners", r.URL.Query(), &params.Owners)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tags", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owners", Err: err})
 		return
 	}
 
@@ -197,6 +203,36 @@ func (siw *ServerInterfaceWrapper) Auth(w http.ResponseWriter, r *http.Request) 
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Auth(w, r)
+	})
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// Owner operation middleware
+func (siw *ServerInterfaceWrapper) Owners(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Owners(w, r)
+	})
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// DeletePets operation middleware
+func (siw *ServerInterfaceWrapper) DeletePets(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePets(w, r)
 	})
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -333,6 +369,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/auth", wrapper.Auth)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/owners", wrapper.Owners)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/pets", wrapper.DeletePets)
 	})
 
 	return r
