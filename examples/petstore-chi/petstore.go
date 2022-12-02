@@ -61,6 +61,7 @@ func main() {
 func getFiretaiLMiddleware() func(next http.Handler) http.Handler {
 	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 		OpenapiSpecPath: "./petstore-expanded.yaml",
+		DebugErrs:       true,
 		AuthCallbacks: map[string]openapi3filter.AuthenticationFunc{
 			"MyBearerAuth": func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
 				authHeaderValue := ai.RequestValidationInput.Request.Header.Get("Authorization")
