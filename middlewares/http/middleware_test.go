@@ -465,7 +465,7 @@ func TestInvalidResponseBody(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(
 		t,
-		"{\"code\":500,\"title\":\"internal server error\",\"detail\":\"the response's body did not match your appspec: response body doesn't match the schema: Error at \\\"/description\\\": value is not one of the allowed values\\nSchema:\\n  {\\n    \\\"enum\\\": [\\n      \\\"test description\\\"\\n    ],\\n    \\\"type\\\": \\\"string\\\"\\n  }\\n\\nValue:\\n  \\\"another test description\\\"\\n\"}",
+		"{\"code\":500,\"title\":\"internal server error\",\"detail\":\"the response's body did not match your appspec: response body doesn't match the schema: Error at \\\"/description\\\": value \\\"another test description\\\" is not one of the allowed values\\nSchema:\\n  {\\n    \\\"enum\\\": [\\n      \\\"test description\\\"\\n    ],\\n    \\\"type\\\": \\\"string\\\"\\n  }\\n\\nValue:\\n  \\\"another test description\\\"\\n\"}",
 		string(respBody),
 	)
 }
