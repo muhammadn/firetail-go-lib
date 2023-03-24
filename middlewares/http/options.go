@@ -10,7 +10,7 @@ import (
 
 // Options is an options struct used when creating a Firetail middleware (GetMiddleware)
 type Options struct {
-	// SpecPath is the path at which your openapi spec can be found
+	// SpecPath is the path at which your openapi spec can be found. Supplying an empty string disables any validation.
 	OpenapiSpecPath string
 
 	// LogApiKey is the API key which will be used when sending logs to the Firetail logging API. This value should typically be loaded

@@ -80,6 +80,32 @@ func TestValidRequestAndResponse(t *testing.T) {
 	assert.Equal(t, "{\"description\":\"test description\"}", string(respBody))
 }
 
+func TestNoSpec(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{})
+	require.Nil(t, err)
+	handler := middleware(healthHandler)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented/1",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
+	)
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("X-Api-Key", "valid-api-key")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 200, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "application/json", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(t, "{\"description\":\"test description\"}", string(respBody))
+}
+
 func TestInvalidSpecPath(t *testing.T) {
 	_, err := GetMiddleware(&Options{
 		OpenapiSpecPath: "./test-spec-not-here.yaml",
