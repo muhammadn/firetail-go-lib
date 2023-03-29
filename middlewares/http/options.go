@@ -40,11 +40,13 @@ type Options struct {
 	// documentation
 	AuthCallbacks map[string]openapi3filter.AuthenticationFunc
 
-	// DisableRequestValidation is an optional flag which, if set to true, disables request validation
-	DisableRequestValidation bool
+	// EnableRequestValidation is an optional flag which, if set to true, enables request validation against the openapi spec provided -
+	// if no openapi spec is provided, then no validation will be performed
+	EnableRequestValidation bool
 
-	// DisableResponseValidation is an optional flag which, if set to true, disables response validation
-	DisableResponseValidation bool
+	// EnableResponseValidation is an optional flag which, if set to true, enables response validation against the openapi spec provided -
+	// if no openapi spec is provided, then no validation will be performed
+	EnableResponseValidation bool
 
 	// CustomBodyDecoders is a map of Content-Type header values to openapi3 decoders - if the kin-openapi module does not support your
 	// Content-Type by default, you will need to add a custom decoder here
