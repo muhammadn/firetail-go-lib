@@ -53,9 +53,37 @@ var authCallbacks = map[string]openapi3filter.AuthenticationFunc{
 
 func TestValidRequestAndResponse(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		AuthCallbacks:   authCallbacks,
+		OpenapiSpecPath:          "./test-spec.yaml",
+		AuthCallbacks:            authCallbacks,
+		EnableRequestValidation:  true,
+		EnableResponseValidation: true,
 	})
+	require.Nil(t, err)
+	handler := middleware(healthHandler)
+	responseRecorder := httptest.NewRecorder()
+
+	request := httptest.NewRequest(
+		"POST", "/implemented/1",
+		io.NopCloser(bytes.NewBuffer([]byte("{\"description\":\"test description\"}"))),
+	)
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("X-Api-Key", "valid-api-key")
+	handler.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(t, 200, responseRecorder.Code)
+
+	require.Contains(t, responseRecorder.HeaderMap, "Content-Type")
+	require.GreaterOrEqual(t, len(responseRecorder.HeaderMap["Content-Type"]), 1)
+	assert.Len(t, responseRecorder.HeaderMap["Content-Type"], 1)
+	assert.Equal(t, "application/json", responseRecorder.HeaderMap["Content-Type"][0])
+
+	respBody, err := io.ReadAll(responseRecorder.Body)
+	require.Nil(t, err)
+	assert.Equal(t, "{\"description\":\"test description\"}", string(respBody))
+}
+
+func TestNoSpec(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
 	responseRecorder := httptest.NewRecorder()
@@ -98,8 +126,9 @@ func TestInvalidSpec(t *testing.T) {
 
 func TestRequestToInvalidRoute(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		DebugErrs:       true,
+		OpenapiSpecPath:         "./test-spec.yaml",
+		DebugErrs:               true,
+		EnableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -122,7 +151,8 @@ func TestRequestToInvalidRoute(t *testing.T) {
 
 func TestDebugErrsDisabled(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
+		OpenapiSpecPath:         "./test-spec.yaml",
+		EnableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -145,8 +175,9 @@ func TestDebugErrsDisabled(t *testing.T) {
 
 func TestRequestWithDisallowedMethod(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		DebugErrs:       true,
+		OpenapiSpecPath:         "./test-spec.yaml",
+		DebugErrs:               true,
+		EnableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -169,9 +200,10 @@ func TestRequestWithDisallowedMethod(t *testing.T) {
 
 func TestRequestWithInvalidHeader(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		AuthCallbacks:   authCallbacks,
-		DebugErrs:       true,
+		OpenapiSpecPath:         "./test-spec.yaml",
+		AuthCallbacks:           authCallbacks,
+		DebugErrs:               true,
+		EnableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -204,9 +236,10 @@ func TestRequestWithInvalidHeader(t *testing.T) {
 
 func TestRequestWithInvalidQueryParam(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		AuthCallbacks:   authCallbacks,
-		DebugErrs:       true,
+		OpenapiSpecPath:         "./test-spec.yaml",
+		AuthCallbacks:           authCallbacks,
+		DebugErrs:               true,
+		EnableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -238,9 +271,10 @@ func TestRequestWithInvalidQueryParam(t *testing.T) {
 
 func TestRequestWithInvalidPathParam(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		AuthCallbacks:   authCallbacks,
-		DebugErrs:       true,
+		OpenapiSpecPath:         "./test-spec.yaml",
+		AuthCallbacks:           authCallbacks,
+		DebugErrs:               true,
+		EnableRequestValidation: true,
 	})
 	handler := middleware(healthHandler)
 	responseRecorder := httptest.NewRecorder()
@@ -271,9 +305,10 @@ func TestRequestWithInvalidPathParam(t *testing.T) {
 
 func TestRequestWithInvalidBody(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		AuthCallbacks:   authCallbacks,
-		DebugErrs:       true,
+		OpenapiSpecPath:         "./test-spec.yaml",
+		AuthCallbacks:           authCallbacks,
+		DebugErrs:               true,
+		EnableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -338,8 +373,9 @@ func TestRequestWithValidAuth(t *testing.T) {
 
 func TestRequestWithUnimplementedAuth(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		DebugErrs:       true,
+		OpenapiSpecPath:         "./test-spec.yaml",
+		DebugErrs:               true,
+		EnableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -371,9 +407,10 @@ func TestRequestWithUnimplementedAuth(t *testing.T) {
 
 func TestRequestWithMissingAuth(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		AuthCallbacks:   authCallbacks,
-		DebugErrs:       true,
+		OpenapiSpecPath:         "./test-spec.yaml",
+		AuthCallbacks:           authCallbacks,
+		DebugErrs:               true,
+		EnableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -404,9 +441,10 @@ func TestRequestWithMissingAuth(t *testing.T) {
 
 func TestRequestWithInvalidAuth(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		AuthCallbacks:   authCallbacks,
-		DebugErrs:       true,
+		OpenapiSpecPath:         "./test-spec.yaml",
+		AuthCallbacks:           authCallbacks,
+		DebugErrs:               true,
+		EnableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -438,9 +476,10 @@ func TestRequestWithInvalidAuth(t *testing.T) {
 
 func TestInvalidResponseBody(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		AuthCallbacks:   authCallbacks,
-		DebugErrs:       true,
+		OpenapiSpecPath:          "./test-spec.yaml",
+		AuthCallbacks:            authCallbacks,
+		DebugErrs:                true,
+		EnableResponseValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandlerWithWrongResponseBody)
@@ -472,9 +511,10 @@ func TestInvalidResponseBody(t *testing.T) {
 
 func TestInvalidResponseCode(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		AuthCallbacks:   authCallbacks,
-		DebugErrs:       true,
+		OpenapiSpecPath:          "./test-spec.yaml",
+		AuthCallbacks:            authCallbacks,
+		DebugErrs:                true,
+		EnableResponseValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandlerWithWrongResponseCode)
@@ -506,8 +546,7 @@ func TestInvalidResponseCode(t *testing.T) {
 
 func TestDisabledRequestValidation(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath:          "./test-spec.yaml",
-		DisableRequestValidation: true,
+		OpenapiSpecPath: "./test-spec.yaml",
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -534,9 +573,8 @@ func TestDisabledRequestValidation(t *testing.T) {
 
 func TestDisabledResponseValidation(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath:           "./test-spec.yaml",
-		AuthCallbacks:             authCallbacks,
-		DisableResponseValidation: true,
+		OpenapiSpecPath: "./test-spec.yaml",
+		AuthCallbacks:   authCallbacks,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandlerWithWrongResponseBody)
@@ -564,9 +602,10 @@ func TestDisabledResponseValidation(t *testing.T) {
 
 func TestUnexpectedContentType(t *testing.T) {
 	middleware, err := GetMiddleware(&Options{
-		OpenapiSpecPath: "./test-spec.yaml",
-		AuthCallbacks:   authCallbacks,
-		DebugErrs:       true,
+		OpenapiSpecPath:         "./test-spec.yaml",
+		AuthCallbacks:           authCallbacks,
+		DebugErrs:               true,
+		EnableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)
@@ -601,6 +640,7 @@ func TestCustomXMLDecoder(t *testing.T) {
 				return xml2map.NewDecoder(r).Decode()
 			},
 		},
+		EnableRequestValidation: true,
 	})
 	require.Nil(t, err)
 	handler := middleware(healthHandler)

@@ -12,7 +12,7 @@ import (
 func main() {
 	firetailMiddleware, err := firetail.GetMiddleware(&firetail.Options{
 		OpenapiSpecPath: "app-spec.yaml",
-		LogApiKey:       os.Getenv("FIRETAIL_LOG_API_KEY"),
+		LogsApiToken:    os.Getenv("FIRETAIL_LOG_API_KEY"),
 	})
 	if err != nil {
 		panic(err)

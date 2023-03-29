@@ -10,16 +10,17 @@ import (
 
 // Options is an options struct used when creating a Firetail middleware (GetMiddleware)
 type Options struct {
-	// SpecPath is the path at which your openapi spec can be found
+	// SpecPath is the path at which your openapi spec can be found. Supplying an empty string disables any validation.
 	OpenapiSpecPath string
 
-	// LogApiKey is the API key which will be used when sending logs to the Firetail logging API. This value should typically be loaded
-	// in from an environment variable
-	LogApiKey string
+	// LogsApiToken is the API token which will be used when sending logs to the Firetail logging API with the default batch callback.
+	// This value should typically be loaded in from an environment variable. If unset, the default batch callback will not forward
+	// logs to the Firetail SaaS
+	LogsApiToken string
 
-	// LogApiUrl is the URL of the Firetail logging API endpoint to which logs will be sent. This value should typically be loaded in from
-	// an environment variable
-	LogApiUrl string
+	// LogsApiUrl is the URL of the Firetail logging API endpoint to which logs will be sent by the default batch callback. This value
+	// should typically be loaded in from an environment variable. If unset, the default value is the Firetail SaaS' bulk logs endpoint
+	LogsApiUrl string
 
 	// LogBatchCallback is an optional callback which is provided with a batch of Firetail log entries ready to be sent to Firetail. The
 	// default callback sends log entries to the Firetail logging API. It may be customised to, for example, additionally log the entries
@@ -40,11 +41,13 @@ type Options struct {
 	// documentation
 	AuthCallbacks map[string]openapi3filter.AuthenticationFunc
 
-	// DisableRequestValidation is an optional flag which, if set to true, disables request validation
-	DisableRequestValidation bool
+	// EnableRequestValidation is an optional flag which, if set to true, enables request validation against the openapi spec provided -
+	// if no openapi spec is provided, then no validation will be performed
+	EnableRequestValidation bool
 
-	// DisableResponseValidation is an optional flag which, if set to true, disables response validation
-	DisableResponseValidation bool
+	// EnableResponseValidation is an optional flag which, if set to true, enables response validation against the openapi spec provided -
+	// if no openapi spec is provided, then no validation will be performed
+	EnableResponseValidation bool
 
 	// CustomBodyDecoders is a map of Content-Type header values to openapi3 decoders - if the kin-openapi module does not support your
 	// Content-Type by default, you will need to add a custom decoder here
@@ -57,8 +60,8 @@ type Options struct {
 }
 
 func (o *Options) setDefaults() {
-	if o.LogApiUrl == "" {
-		o.LogApiUrl = "https://api.logging.eu-west-1.prod.firetail.app/logs/bulk"
+	if o.LogsApiUrl == "" {
+		o.LogsApiUrl = "https://api.logging.eu-west-1.prod.firetail.app/logs/bulk"
 	}
 
 	if o.ErrCallback == nil {

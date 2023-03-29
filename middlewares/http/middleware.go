@@ -21,19 +21,22 @@ import (
 func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, error) {
 	options.setDefaults() // Fill in any defaults where apropriate
 
-	// Load in our appspec, validate it & create a router from it.
-	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
-	doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
-	if err != nil {
-		return nil, ErrorInvalidConfiguration{err}
-	}
-	err = doc.Validate(context.Background())
-	if err != nil {
-		return nil, ErrorAppspecInvalid{err}
-	}
-	router, err := gorillamux.NewRouter(doc)
-	if err != nil {
-		return nil, err
+	// Load in our appspec, validate it & create a router from it if we have an appspec to load
+	var router routers.Router
+	if options.OpenapiSpecPath != "" {
+		loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
+		doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
+		if err != nil {
+			return nil, ErrorInvalidConfiguration{err}
+		}
+		err = doc.Validate(context.Background())
+		if err != nil {
+			return nil, ErrorAppspecInvalid{err}
+		}
+		router, err = gorillamux.NewRouter(doc)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Register any custom body decoders
@@ -46,8 +49,8 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 		MaxBatchSize:  1024 * 512,
 		MaxLogAge:     time.Minute,
 		BatchCallback: options.LogBatchCallback,
-		LogApiKey:     options.LogApiKey,
-		LogApiUrl:     options.LogApiUrl,
+		LogApiKey:     options.LogsApiToken,
+		LogApiUrl:     options.LogsApiUrl,
 	})
 
 	middleware := func(next http.Handler) http.Handler {
@@ -105,24 +108,27 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Now we have the request body, we can fill it into our log entry
 			logEntry.Request.Body = string(requestBody)
 
-			// Check there's a corresponding route for this request
-			route, pathParams, err := router.FindRoute(r)
-			if err == routers.ErrMethodNotAllowed {
-				options.ErrCallback(ErrorUnsupportedMethod{r.URL.Path, r.Method}, localResponseWriter, r)
-				return
-			} else if err == routers.ErrPathNotFound {
-				options.ErrCallback(ErrorRouteNotFound{r.URL.Path}, localResponseWriter, r)
-				return
-			} else if err != nil {
-				options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter, r)
-				return
+			// Check there's a corresponding route for this request if we have a router
+			var route *routers.Route
+			var pathParams map[string]string
+			if router != nil && (options.EnableRequestValidation || options.EnableResponseValidation) {
+				route, pathParams, err = router.FindRoute(r)
+				if err == routers.ErrMethodNotAllowed {
+					options.ErrCallback(ErrorUnsupportedMethod{r.URL.Path, r.Method}, localResponseWriter, r)
+					return
+				} else if err == routers.ErrPathNotFound {
+					options.ErrCallback(ErrorRouteNotFound{r.URL.Path}, localResponseWriter, r)
+					return
+				} else if err != nil {
+					options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter, r)
+					return
+				}
+				// We now know the resource that was requested, so we can fill it into our log entry
+				logEntry.Request.Resource = route.Path
 			}
 
-			// We now know the resource that was requested, so we can fill it into our log entry
-			logEntry.Request.Resource = route.Path
-
-			// If it hasn't been disabled, validate the request against the OpenAPI spec.
-			if !options.DisableRequestValidation {
+			// If it has been enabled, and we were able to determine the route and path params, validate the request against the openapi spec
+			if options.EnableRequestValidation && route != nil && pathParams != nil {
 				requestValidationInput := &openapi3filter.RequestValidationInput{
 					Request:    r,
 					PathParams: pathParams,
@@ -184,8 +190,8 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			next.ServeHTTP(chainResponseWriter, r)
 			logEntry.ExecutionTime = float64(time.Since(startTime).Milliseconds())
 
-			// If it hasn't been disabled, validate the response against the openapi spec
-			if !options.DisableResponseValidation {
+			// If it has been enabled, and we were able to determine the route and path params, validate the response against the openapi spec
+			if options.EnableResponseValidation && route != nil && pathParams != nil {
 				responseValidationInput := &openapi3filter.ResponseValidationInput{
 					RequestValidationInput: &openapi3filter.RequestValidationInput{
 						Request:    r,
