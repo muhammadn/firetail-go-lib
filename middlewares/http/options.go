@@ -14,11 +14,11 @@ type Options struct {
 	OpenapiSpecPath string
 
 	// LogApiKey is the API key which will be used when sending logs to the Firetail logging API. This value should typically be loaded
-	// in from an environment variable
+	// in from an environment variable. If unset, no logs will be forwarded to the Firetail SaaS
 	LogApiKey string
 
 	// LogApiUrl is the URL of the Firetail logging API endpoint to which logs will be sent. This value should typically be loaded in from
-	// an environment variable
+	// an environment variable. If unset, the default value is the Firetail SaaS' bulk logs endpoint
 	LogApiUrl string
 
 	// LogBatchCallback is an optional callback which is provided with a batch of Firetail log entries ready to be sent to Firetail. The
