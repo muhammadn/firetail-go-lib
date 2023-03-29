@@ -127,8 +127,8 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				// We now know the resource that was requested, so we can fill it into our log entry
 				logEntry.Request.Resource = route.Path
 
-				// If it hasn't been disabled, validate the request against the OpenAPI spec.
-				if !options.DisableRequestValidation {
+				// If it has been enabled, validate the request against the OpenAPI spec.
+				if options.EnableRequestValidation {
 					requestValidationInput := &openapi3filter.RequestValidationInput{
 						Request:    r,
 						PathParams: pathParams,
@@ -192,7 +192,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			logEntry.ExecutionTime = float64(time.Since(startTime).Milliseconds())
 
 			// If it hasn't been disabled, and we were able to determine the route and path params, validate the response against the openapi spec
-			if !options.DisableResponseValidation && route != nil && pathParams != nil {
+			if options.EnableResponseValidation && route != nil && pathParams != nil {
 				responseValidationInput := &openapi3filter.ResponseValidationInput{
 					RequestValidationInput: &openapi3filter.RequestValidationInput{
 						Request:    r,
