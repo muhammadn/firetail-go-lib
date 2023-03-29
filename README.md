@@ -36,7 +36,7 @@ if err != nil {
 }
 ```
 
-You will then have a `func(next http.Handler) http.Handler`, `firetailMiddleware`, which you can then use to wrap a `http.Handler`. This should be suitable for frameworks such as Chi.
+You will then have a `func(next http.Handler) http.Handler`, `firetailMiddleware`, which you can use to wrap a `http.Handler` just the same as with the middleware from [`net/http/middleware`](https://pkg.go.dev/go.ntrrg.dev/ntgo/net/http/middleware). This should also be suitable for [Chi](https://go-chi.io/#/pages/middleware).
 
 
 
