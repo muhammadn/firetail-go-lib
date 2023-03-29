@@ -2,7 +2,41 @@
 
 [![License](https://img.shields.io/pypi/l/firetail.svg)](https://github.com/FireTail-io/firetail-go-lib/blob/main/LICENSE.txt)
 
-Want to use Firetail in your project? Good news! Soon, you'll be able to find packages containing middleware for various different frameworks in the [middlewares](./middlewares) directory, and examples of their use in [examples](./examples). :)
+Middlewares providing request and response validation against an OpenAPI spec at runtime, optionally integrating with the Firetail SaaS. Packages containing middleware for various different frameworks can be found in the [middlewares](./middlewares) directory, and examples of their use in [examples](./examples).
+
+
+
+## Getting Started
+
+### Middleware for `net/http`
+
+Get the middleware:
+
+```bash
+go get github.com/FireTail-io/firetail-go-lib/middlewares/http
+```
+
+Import it:
+
+```go
+import firetail "github.com/FireTail-io/firetail-go-lib/middlewares/http"
+```
+
+Create a middleware using `GetMiddleware`; see the `Options` struct for all the available configurations:
+
+```go
+firetailMiddleware, err := firetail.GetMiddleware(
+	&firetail.Options{
+		OpenapiSpecPath: path,
+		LogApiKey:       apiToken,
+	},
+)
+if err != nil {
+	// Handle the err...
+}
+```
+
+You will then have a `func(next http.Handler) http.Handler`, `firetailMiddleware`, which you can then use to wrap a `http.Handler`. This should be suitable for frameworks such as Chi.
 
 
 
