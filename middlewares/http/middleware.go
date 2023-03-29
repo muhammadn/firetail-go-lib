@@ -49,8 +49,8 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 		MaxBatchSize:  1024 * 512,
 		MaxLogAge:     time.Minute,
 		BatchCallback: options.LogBatchCallback,
-		LogApiKey:     options.LogApiKey,
-		LogApiUrl:     options.LogApiUrl,
+		LogApiKey:     options.LogsApiToken,
+		LogApiUrl:     options.LogsApiUrl,
 	})
 
 	middleware := func(next http.Handler) http.Handler {
