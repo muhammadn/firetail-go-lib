@@ -111,7 +111,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Check there's a corresponding route for this request if we have a router
 			var route *routers.Route
 			var pathParams map[string]string
-			if router != nil {
+			if router != nil && (options.EnableRequestValidation || options.EnableResponseValidation) {
 				route, pathParams, err = router.FindRoute(r)
 				if err == routers.ErrMethodNotAllowed {
 					options.ErrCallback(ErrorUnsupportedMethod{r.URL.Path, r.Method}, localResponseWriter, r)
@@ -123,65 +123,64 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 					options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter, r)
 					return
 				}
-
 				// We now know the resource that was requested, so we can fill it into our log entry
 				logEntry.Request.Resource = route.Path
+			}
 
-				// If it has been enabled, validate the request against the OpenAPI spec.
-				if options.EnableRequestValidation {
-					requestValidationInput := &openapi3filter.RequestValidationInput{
-						Request:    r,
-						PathParams: pathParams,
-						Route:      route,
-						Options: &openapi3filter.Options{
-							AuthenticationFunc: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
-								authCallback, hasAuthCallback := options.AuthCallbacks[ai.SecuritySchemeName]
-								if !hasAuthCallback {
-									return ErrorAuthSchemeNotImplemented{ai.SecuritySchemeName}
-								}
-								return authCallback(ctx, ai)
-							},
+			// If it has been enabled, and we were able to determine the route and path params, validate the request against the openapi spec
+			if options.EnableRequestValidation && route != nil && pathParams != nil {
+				requestValidationInput := &openapi3filter.RequestValidationInput{
+					Request:    r,
+					PathParams: pathParams,
+					Route:      route,
+					Options: &openapi3filter.Options{
+						AuthenticationFunc: func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
+							authCallback, hasAuthCallback := options.AuthCallbacks[ai.SecuritySchemeName]
+							if !hasAuthCallback {
+								return ErrorAuthSchemeNotImplemented{ai.SecuritySchemeName}
+							}
+							return authCallback(ctx, ai)
 						},
-					}
-					err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
-					if err != nil {
-						// If the err is an openapi3filter RequestError, we can extract more information from the err...
-						if err, isRequestErr := err.(*openapi3filter.RequestError); isRequestErr {
-							// TODO: Using strings.Contains is janky here and may break - should replace with something more reliable
-							// See the following open issue on the kin-openapi repo: https://github.com/getkin/kin-openapi/issues/477
-							// TODO: Open source contribution to kin-openapi?
-							if strings.Contains(err.Reason, "header Content-Type has unexpected value") {
-								options.ErrCallback(ErrorRequestContentTypeInvalid{r.Header.Get("Content-Type"), route.Path}, localResponseWriter, r)
-								return
-							}
-							if strings.Contains(err.Error(), "body has an error") {
-								options.ErrCallback(ErrorRequestBodyInvalid{err}, localResponseWriter, r)
-								return
-							}
-							if strings.Contains(err.Error(), "header has an error") {
-								options.ErrCallback(ErrorRequestHeadersInvalid{err}, localResponseWriter, r)
-								return
-							}
-							if strings.Contains(err.Error(), "query has an error") {
-								options.ErrCallback(ErrorRequestQueryParamsInvalid{err}, localResponseWriter, r)
-								return
-							}
-							if strings.Contains(err.Error(), "path has an error") {
-								options.ErrCallback(ErrorRequestPathParamsInvalid{err}, localResponseWriter, r)
-								return
-							}
-						}
-
-						// If the validation fails due to a security requirement, we pass a SecurityRequirementsError to the ErrCallback
-						if err, isSecurityErr := err.(*openapi3filter.SecurityRequirementsError); isSecurityErr {
-							options.ErrCallback(ErrorAuthNoMatchingScheme{err}, localResponseWriter, r)
+					},
+				}
+				err = openapi3filter.ValidateRequest(context.Background(), requestValidationInput)
+				if err != nil {
+					// If the err is an openapi3filter RequestError, we can extract more information from the err...
+					if err, isRequestErr := err.(*openapi3filter.RequestError); isRequestErr {
+						// TODO: Using strings.Contains is janky here and may break - should replace with something more reliable
+						// See the following open issue on the kin-openapi repo: https://github.com/getkin/kin-openapi/issues/477
+						// TODO: Open source contribution to kin-openapi?
+						if strings.Contains(err.Reason, "header Content-Type has unexpected value") {
+							options.ErrCallback(ErrorRequestContentTypeInvalid{r.Header.Get("Content-Type"), route.Path}, localResponseWriter, r)
 							return
 						}
+						if strings.Contains(err.Error(), "body has an error") {
+							options.ErrCallback(ErrorRequestBodyInvalid{err}, localResponseWriter, r)
+							return
+						}
+						if strings.Contains(err.Error(), "header has an error") {
+							options.ErrCallback(ErrorRequestHeadersInvalid{err}, localResponseWriter, r)
+							return
+						}
+						if strings.Contains(err.Error(), "query has an error") {
+							options.ErrCallback(ErrorRequestQueryParamsInvalid{err}, localResponseWriter, r)
+							return
+						}
+						if strings.Contains(err.Error(), "path has an error") {
+							options.ErrCallback(ErrorRequestPathParamsInvalid{err}, localResponseWriter, r)
+							return
+						}
+					}
 
-						// Else, we just use a non-specific ValidationError error
-						options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter, r)
+					// If the validation fails due to a security requirement, we pass a SecurityRequirementsError to the ErrCallback
+					if err, isSecurityErr := err.(*openapi3filter.SecurityRequirementsError); isSecurityErr {
+						options.ErrCallback(ErrorAuthNoMatchingScheme{err}, localResponseWriter, r)
 						return
 					}
+
+					// Else, we just use a non-specific ValidationError error
+					options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter, r)
+					return
 				}
 			}
 
@@ -191,7 +190,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			next.ServeHTTP(chainResponseWriter, r)
 			logEntry.ExecutionTime = float64(time.Since(startTime).Milliseconds())
 
-			// If it hasn't been disabled, and we were able to determine the route and path params, validate the response against the openapi spec
+			// If it has been enabled, and we were able to determine the route and path params, validate the response against the openapi spec
 			if options.EnableResponseValidation && route != nil && pathParams != nil {
 				responseValidationInput := &openapi3filter.ResponseValidationInput{
 					RequestValidationInput: &openapi3filter.RequestValidationInput{
