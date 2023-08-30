@@ -25,7 +25,8 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	var router routers.Router
 	if options.OpenapiSpecPath != "" {
 		loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
-		doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
+		//doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
+		doc, err := loader.LoadFromData([]byte(options.OpenapiSpecData))
 		if err != nil {
 			return nil, ErrorInvalidConfiguration{err}
 		}
