@@ -8,9 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"time"
 
-	"github.com/FireTail-io/firetail-go-lib/logging"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers"
@@ -45,58 +43,10 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 		openapi3filter.RegisterBodyDecoder(contentType, bodyDecoder)
 	}
 
-	// Create a batchLogger to pass all our log entries to
-	batchLogger := logging.NewBatchLogger(logging.BatchLoggerOptions{
-		MaxBatchSize:  1024 * 512,
-		MaxLogAge:     time.Minute,
-		BatchCallback: options.LogBatchCallback,
-		LogApiKey:     options.LogsApiToken,
-		LogApiUrl:     options.LogsApiUrl,
-	})
-
 	middleware := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Create a LogEntry populated with everything we know right now
-			logEntry := logging.LogEntry{
-				Version:     logging.The100Alpha,
-				DateCreated: time.Now().UnixMilli(),
-				Request: logging.Request{
-					HTTPProtocol: logging.HTTPProtocol(r.Proto),
-					Headers:      r.Header,
-					Method:       logging.Method(r.Method),
-					IP:           strings.Split(r.RemoteAddr, ":")[0],
-				},
-			}
-			if r.TLS != nil {
-				logEntry.Request.URI = "https://" + r.Host + r.URL.RequestURI()
-			} else {
-				logEntry.Request.URI = "http://" + r.Host + r.URL.RequestURI()
-			}
-
 			// Create a Firetail ResponseWriter so we can access the response body, status code etc. for logging & validation later
 			localResponseWriter := httptest.NewRecorder()
-
-			// No matter what happens, read the response from the local response writer, enqueue the log entry & publish the response that was written to the ResponseWriter
-			defer func() {
-				logEntry.Response = logging.Response{
-					StatusCode: int64(localResponseWriter.Code),
-					Body:       string(localResponseWriter.Body.Bytes()),
-					Headers:    localResponseWriter.Result().Header,
-				}
-
-				// Remember to sanitise the log entry before enqueueing it!
-				logEntry = options.LogEntrySanitiser(logEntry)
-
-				batchLogger.Enqueue(&logEntry)
-
-				for key, vals := range localResponseWriter.HeaderMap {
-					for _, val := range vals {
-						w.Header().Add(key, val)
-					}
-				}
-				w.WriteHeader(localResponseWriter.Code)
-				w.Write(localResponseWriter.Body.Bytes())
-			}()
 
 			// Read in the request body so we can log it & replace r.Body with a new copy for the next http.Handler to read from
 			requestBody, err := ioutil.ReadAll(r.Body)
@@ -105,9 +55,6 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				return
 			}
 			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
-
-			// Now we have the request body, we can fill it into our log entry
-			logEntry.Request.Body = string(requestBody)
 
 			// Check there's a corresponding route for this request if we have a router
 			var route *routers.Route
@@ -125,8 +72,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 					return
 				}
 				// We now know the resource that was requested, so we can fill it into our log entry
-				logEntry.Request.Resource = route.Path
-			}
+			} 
 
 			// If it has been enabled, and we were able to determine the route and path params, validate the request against the openapi spec
 			if options.EnableRequestValidation && route != nil && pathParams != nil {
@@ -187,9 +133,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 			// Serve the next handler down the chain & take note of the execution time
 			chainResponseWriter := httptest.NewRecorder()
-			startTime := time.Now()
 			next.ServeHTTP(chainResponseWriter, r)
-			logEntry.ExecutionTime = float64(time.Since(startTime).Milliseconds())
 
 			// If it has been enabled, and we were able to determine the route and path params, validate the response against the openapi spec
 			if options.EnableResponseValidation && route != nil && pathParams != nil {
