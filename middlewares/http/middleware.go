@@ -22,7 +22,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 	// Load in our appspec, validate it & create a router from it if we have an appspec to load
 	var router routers.Router
-	if options.OpenapiSpecPath != "" {
+	//if options.OpenapiSpecPath != "" {
 		loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
 		//doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
 		doc, err := loader.LoadFromData([]byte(options.OpenapiSpecData))
@@ -37,9 +37,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	log.Println("Gorilla mux router:", router)
+	//}
 
 	// Register any custom body decoders
 	for contentType, bodyDecoder := range options.CustomBodyDecoders {
@@ -62,6 +60,9 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Check there's a corresponding route for this request if we have a router
 			var route *routers.Route
 			var pathParams map[string]string
+			log.Println("ROUTE: ", route)
+			log.Println("ROUTER: ", router)
+
 			if router != nil && (options.EnableRequestValidation || options.EnableResponseValidation) {
 				route, pathParams, err = router.FindRoute(r)
 				if err == routers.ErrMethodNotAllowed {
@@ -74,7 +75,6 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 					options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter, r)
 					return
 				}
-				// We now know the resource that was requested, so we can fill it into our log entry
 			} 
 
 			// If it has been enabled, and we were able to determine the route and path params, validate the request against the openapi spec
@@ -141,6 +141,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// If it has been enabled, and we were able to determine the route and path params, validate the response against the openapi spec
 			log.Println("Route: ", route)
 			log.Println("pathParams:", pathParams)
+			route = "/profile/alice"
 			if options.EnableResponseValidation && route != nil && pathParams != nil {
 				log.Println("EnableResponseValidation is working!")
 				responseValidationInput := &openapi3filter.ResponseValidationInput{
