@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"log"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -137,6 +138,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 			// If it has been enabled, and we were able to determine the route and path params, validate the response against the openapi spec
 			if options.EnableResponseValidation && route != nil && pathParams != nil {
+				log.Println("EnableResponseValidation is working!")
 				responseValidationInput := &openapi3filter.ResponseValidationInput{
 					RequestValidationInput: &openapi3filter.RequestValidationInput{
 						Request:    r,
