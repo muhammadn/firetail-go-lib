@@ -141,7 +141,6 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// If it has been enabled, and we were able to determine the route and path params, validate the response against the openapi spec
 			log.Println("Route: ", route)
 			log.Println("pathParams:", pathParams)
-			route = "/profile/alice"
 			if options.EnableResponseValidation && route != nil && pathParams != nil {
 				log.Println("EnableResponseValidation is working!")
 				responseValidationInput := &openapi3filter.ResponseValidationInput{
