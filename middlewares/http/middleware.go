@@ -39,6 +39,8 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 		}
 	}
 
+	log.Println("Gorilla mux router:", router)
+
 	// Register any custom body decoders
 	for contentType, bodyDecoder := range options.CustomBodyDecoders {
 		openapi3filter.RegisterBodyDecoder(contentType, bodyDecoder)
