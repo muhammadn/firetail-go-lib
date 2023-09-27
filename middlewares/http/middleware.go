@@ -22,22 +22,22 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 	// Load in our appspec, validate it & create a router from it if we have an appspec to load
 	var router routers.Router
-	//if options.OpenapiSpecPath != "" {
-		loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
-		//doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
-		doc, err := loader.LoadFromData([]byte(options.OpenapiSpecData))
-		if err != nil {
-			return nil, ErrorInvalidConfiguration{err}
-		}
-		err = doc.Validate(context.Background())
-		if err != nil {
-			return nil, ErrorAppspecInvalid{err}
-		}
-		router, err = gorillamux.NewRouter(doc)
-		if err != nil {
-			return nil, err
-		}
-	//}
+	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
+	//doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
+	doc, err := loader.LoadFromData([]byte(options.OpenapiSpecData))
+	if err != nil {
+		return nil, ErrorInvalidConfiguration{err}
+	}
+	err = doc.Validate(context.Background())
+	if err != nil {
+		return nil, ErrorAppspecInvalid{err}
+	}
+	router, err = gorillamux.NewRouter(doc)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("GORILLA ROUTER: ", router)
 
 	// Register any custom body decoders
 	for contentType, bodyDecoder := range options.CustomBodyDecoders {
