@@ -37,8 +37,6 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 		return nil, err
 	}
 
-	log.Println("GORILLA ROUTER: ", router)
-
 	// Register any custom body decoders
 	for contentType, bodyDecoder := range options.CustomBodyDecoders {
 		openapi3filter.RegisterBodyDecoder(contentType, bodyDecoder)
@@ -48,6 +46,17 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Create a Firetail ResponseWriter so we can access the response body, status code etc. for logging & validation later
 			localResponseWriter := httptest.NewRecorder()
+
+			// No matter what happens, read the response from the local response writer, enqueue the log entry & publish the response that was written to the ResponseWriter
+			defer func() {
+				for key, vals := range localResponseWriter.HeaderMap {
+					for _, val := range vals {
+						w.Header().Add(key, val)
+					}
+				}
+				w.WriteHeader(localResponseWriter.Code)
+				w.Write(localResponseWriter.Body.Bytes())
+			}()
 
 			// Read in the request body so we can log it & replace r.Body with a new copy for the next http.Handler to read from
 			requestBody, err := ioutil.ReadAll(r.Body)
@@ -60,8 +69,6 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			// Check there's a corresponding route for this request if we have a router
 			var route *routers.Route
 			var pathParams map[string]string
-			log.Println("ROUTE: ", route)
-			log.Println("ROUTER: ", router)
 
 			if router != nil && (options.EnableRequestValidation || options.EnableResponseValidation) {
 				route, pathParams, err = router.FindRoute(r)
@@ -79,6 +86,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 
 			// If it has been enabled, and we were able to determine the route and path params, validate the request against the openapi spec
 			if options.EnableRequestValidation && route != nil && pathParams != nil {
+				log.Println("RequestValidation is running...")
 				requestValidationInput := &openapi3filter.RequestValidationInput{
 					Request:    r,
 					PathParams: pathParams,
@@ -139,10 +147,8 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			next.ServeHTTP(chainResponseWriter, r)
 
 			// If it has been enabled, and we were able to determine the route and path params, validate the response against the openapi spec
-			log.Println("Route: ", route)
-			log.Println("pathParams:", pathParams)
 			if options.EnableResponseValidation && route != nil && pathParams != nil {
-				log.Println("EnableResponseValidation is working!")
+				log.Println("ResponseValidation is running...")
 				responseValidationInput := &openapi3filter.ResponseValidationInput{
 					RequestValidationInput: &openapi3filter.RequestValidationInput{
 						Request:    r,
@@ -158,6 +164,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 				responseBytes, err := ioutil.ReadAll(chainResponseWriter.Result().Body)
 				if err != nil {
 					options.ErrCallback(ErrorResponseBodyInvalid{err}, localResponseWriter, r)
+					log.Println("ErrorResponseBodyInvalid")
 					return
 				}
 				responseValidationInput.SetBodyBytes(responseBytes)
@@ -166,13 +173,16 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 					if responseError, isResponseError := err.(*openapi3filter.ResponseError); isResponseError {
 						if responseError.Reason == "response body doesn't match the schema" {
 							options.ErrCallback(ErrorResponseBodyInvalid{responseError}, localResponseWriter, r)
+							log.Println("Response Body does not match schema")
 							return
 						} else if responseError.Reason == "status is not supported" {
 							options.ErrCallback(ErrorResponseStatusCodeInvalid{responseError.Input.Status}, localResponseWriter, r)
+							log.Println("Status is not supported")
 							return
 						}
 					}
 					options.ErrCallback(ErrorAtRequestUnspecified{err}, localResponseWriter, r)
+                                        log.Println("Unspecified error at request")
 					return
 				}
 			}
@@ -183,8 +193,9 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 					localResponseWriter.Header().Add(key, val)
 				}
 			}
-			localResponseWriter.WriteHeader(chainResponseWriter.Code)
-			localResponseWriter.Write(chainResponseWriter.Body.Bytes())
+			
+                        localResponseWriter.WriteHeader(chainResponseWriter.Code)
+                        localResponseWriter.Write(chainResponseWriter.Body.Bytes())
 		})
 	}
 
