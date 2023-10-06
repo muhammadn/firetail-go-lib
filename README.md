@@ -38,6 +38,8 @@ if err != nil {
 
 You will then have a `func(next http.Handler) http.Handler`, `firetailMiddleware`, which you can use to wrap a `http.Handler` just the same as with the middleware from [`net/http/middleware`](https://pkg.go.dev/go.ntrrg.dev/ntgo/net/http/middleware). This should also be suitable for [Chi](https://go-chi.io/#/pages/middleware).
 
+See the [Go reference for the Options struct](https://pkg.go.dev/github.com/FireTail-io/firetail-go-lib@v0.0.0/middlewares/http#Options) for documentation regarding the available options. For example, if you are using `us.firetail.app` you will need to set the `LogsApiUrl` to `https://api.logging.us-east-2.prod.firetail.app/logs/bulk`.
+
 
 
 ## Tests

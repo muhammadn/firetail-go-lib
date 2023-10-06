@@ -20,6 +20,8 @@ type Options struct {
 
 	// LogsApiUrl is the URL of the Firetail logging API endpoint to which logs will be sent by the default batch callback. This value
 	// should typically be loaded in from an environment variable. If unset, the default value is the Firetail SaaS' bulk logs endpoint
+	// in the default region (firetail.app). If another region is being used, this option will need to be configured appropriately. For
+	// example, for us.firetail.app LogsApiUrl should normally be https://api.logging.us-east-2.prod.firetail.app/logs/bulk
 	LogsApiUrl string
 
 	// LogBatchCallback is an optional callback which is provided with a batch of Firetail log entries ready to be sent to Firetail. The
