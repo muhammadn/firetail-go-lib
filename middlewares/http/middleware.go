@@ -230,7 +230,10 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 }
 
 func getRouter(options *Options) (routers.Router, error) {
-	if (options.OpenapiBytes == nil || len(options.OpenapiBytes) == 0) && options.OpenapiSpecPath == "" {
+        hasBytes := (options.OpenapiBytes != nil && len(options.OpenapiBytes) > 0)
+        hasSpecPath :=  options.OpenapiSpecPath != ""
+        
+	if !hasBytes && !hasSpecPath {
 		return nil, nil
 	}
 
@@ -238,9 +241,9 @@ func getRouter(options *Options) (routers.Router, error) {
 
 	var doc *openapi3.T
 	var err error
-	if options.OpenapiBytes != nil && len(options.OpenapiBytes) > 0 {
+	if hasBytes {
 		doc, err = loader.LoadFromData(options.OpenapiBytes)
-	} else if options.OpenapiSpecPath != "" {
+	} else if hasSpecPath {
 		doc, err = loader.LoadFromFile(options.OpenapiSpecPath)
 	}
 	if err != nil {
