@@ -3,6 +3,7 @@ package firetail
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -22,21 +23,9 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	options.setDefaults() // Fill in any defaults where apropriate
 
 	// Load in our appspec, validate it & create a router from it if we have an appspec to load
-	var router routers.Router
-	if options.OpenapiSpecPath != "" {
-		loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
-		doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
-		if err != nil {
-			return nil, ErrorInvalidConfiguration{err}
-		}
-		err = doc.Validate(context.Background())
-		if err != nil {
-			return nil, ErrorAppspecInvalid{err}
-		}
-		router, err = gorillamux.NewRouter(doc)
-		if err != nil {
-			return nil, err
-		}
+	router, err := getRouter(options)
+	if err != nil {
+		return nil, err
 	}
 
 	// Register any custom body decoders
@@ -238,4 +227,38 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	}
 
 	return middleware, nil
+}
+
+func getRouter(options *Options) (routers.Router, error) {
+	if (options.OpenapiBytes == nil || len(options.OpenapiBytes) == 0) && options.OpenapiSpecPath == "" {
+		return nil, nil
+	}
+
+	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
+
+	var doc *openapi3.T
+	var err error
+	if options.OpenapiBytes != nil && len(options.OpenapiBytes) > 0 {
+		doc, err = loader.LoadFromData(options.OpenapiBytes)
+	} else if options.OpenapiSpecPath != "" {
+		doc, err = loader.LoadFromFile(options.OpenapiSpecPath)
+	}
+	if err != nil {
+		return nil, ErrorInvalidConfiguration{err}
+	}
+	if doc == nil {
+		return nil, ErrorInvalidConfiguration{errors.New("OpenAPI doc was nil after loading from file or data")}
+	}
+
+	err = doc.Validate(context.Background())
+	if err != nil {
+		return nil, ErrorAppspecInvalid{err}
+	}
+
+	router, err := gorillamux.NewRouter(doc)
+	if err != nil {
+		return nil, err
+	}
+
+	return router, nil
 }

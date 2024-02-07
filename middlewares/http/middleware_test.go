@@ -9,12 +9,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	_ "embed"
+
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/sbabiv/xml2map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+//go:embed test-spec.yaml
+var openapiSpecBytes []byte
 
 var healthHandler http.HandlerFunc = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
@@ -122,6 +127,14 @@ func TestInvalidSpec(t *testing.T) {
 	})
 	require.IsType(t, ErrorAppspecInvalid{}, err)
 	require.Equal(t, "invalid appspec: invalid paths: invalid path /health: invalid operation GET: a short description of the response is required", err.Error())
+}
+
+func TestSpecFromBytes(t *testing.T) {
+	middleware, err := GetMiddleware(&Options{
+		OpenapiBytes: openapiSpecBytes,
+	})
+	require.Nil(t, err)
+	require.NotNil(t, middleware)
 }
 
 func TestRequestToInvalidRoute(t *testing.T) {

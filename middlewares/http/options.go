@@ -13,6 +13,10 @@ type Options struct {
 	// SpecPath is the path at which your openapi spec can be found. Supplying an empty string disables any validation.
 	OpenapiSpecPath string
 
+	// OpenapiBytes is the raw bytes of your openapi spec. Supplying an empty slice disables any validation. OpenapiBytes takes
+	// precedence over OpenapiSpecPath if both are provided. OpenapiSpecPath will be used if OpenapiBytes is nil or len() == 0
+	OpenapiBytes []byte
+
 	// LogsApiToken is the API token which will be used when sending logs to the Firetail logging API with the default batch callback.
 	// This value should typically be loaded in from an environment variable. If unset, the default batch callback will not forward
 	// logs to the Firetail SaaS
