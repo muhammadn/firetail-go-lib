@@ -188,7 +188,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			chainResponseWriter := httptest.NewRecorder()
 			startTime := time.Now()
 			next.ServeHTTP(chainResponseWriter, r)
-			logEntry.ExecutionTime = float64(time.Since(startTime).Milliseconds())
+			logEntry.ExecutionTime = float64(time.Since(startTime)) / 1000000.0
 
 			// If it has been enabled, and we were able to determine the route and path params, validate the response against the openapi spec
 			if options.EnableResponseValidation && route != nil && pathParams != nil {
