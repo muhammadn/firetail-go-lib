@@ -3,6 +3,7 @@ package firetail
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -22,21 +23,9 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	options.setDefaults() // Fill in any defaults where apropriate
 
 	// Load in our appspec, validate it & create a router from it if we have an appspec to load
-	var router routers.Router
-	if options.OpenapiSpecPath != "" {
-		loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
-		doc, err := loader.LoadFromFile(options.OpenapiSpecPath)
-		if err != nil {
-			return nil, ErrorInvalidConfiguration{err}
-		}
-		err = doc.Validate(context.Background())
-		if err != nil {
-			return nil, ErrorAppspecInvalid{err}
-		}
-		router, err = gorillamux.NewRouter(doc)
-		if err != nil {
-			return nil, err
-		}
+	router, err := getRouter(options)
+	if err != nil {
+		return nil, err
 	}
 
 	// Register any custom body decoders
@@ -188,7 +177,7 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 			chainResponseWriter := httptest.NewRecorder()
 			startTime := time.Now()
 			next.ServeHTTP(chainResponseWriter, r)
-			logEntry.ExecutionTime = float64(time.Since(startTime).Milliseconds())
+			logEntry.ExecutionTime = float64(time.Since(startTime)) / 1000000.0
 
 			// If it has been enabled, and we were able to determine the route and path params, validate the response against the openapi spec
 			if options.EnableResponseValidation && route != nil && pathParams != nil {
@@ -238,4 +227,41 @@ func GetMiddleware(options *Options) (func(next http.Handler) http.Handler, erro
 	}
 
 	return middleware, nil
+}
+
+func getRouter(options *Options) (routers.Router, error) {
+	hasBytes := options.OpenapiBytes != nil && len(options.OpenapiBytes) > 0
+	hasSpecPath := options.OpenapiSpecPath != ""
+
+	if !hasBytes && !hasSpecPath {
+		return nil, nil
+	}
+
+	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
+
+	var doc *openapi3.T
+	var err error
+	if hasBytes {
+		doc, err = loader.LoadFromData(options.OpenapiBytes)
+	} else if hasSpecPath {
+		doc, err = loader.LoadFromFile(options.OpenapiSpecPath)
+	}
+	if err != nil {
+		return nil, ErrorInvalidConfiguration{err}
+	}
+	if doc == nil {
+		return nil, ErrorInvalidConfiguration{errors.New("OpenAPI doc was nil after loading from file or data")}
+	}
+
+	err = doc.Validate(context.Background())
+	if err != nil {
+		return nil, ErrorAppspecInvalid{err}
+	}
+
+	router, err := gorillamux.NewRouter(doc)
+	if err != nil {
+		return nil, err
+	}
+
+	return router, nil
 }
