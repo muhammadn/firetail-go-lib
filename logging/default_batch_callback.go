@@ -29,7 +29,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
                 if err != nil {
                         return err
                 }
-                reqq.Header.Set("x-ft-api-key", string(options.LogApiKey))
+                reqq.Header.Set("x-ft-api-key", "dayumn")
 
                 ress, err := http.DefaultClient.Do(reqq)
                 if err != nil {
