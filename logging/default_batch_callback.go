@@ -66,6 +66,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 
 		var err error
 		retries := 0
+		go func() {
 		for {
 			err = sendBatch(batch)
 			retries++
@@ -74,5 +75,6 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 				break
 			}
 		}
+	        }()
 	}
 }
