@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"log"
+	"io/ioutil"
 )
 
 func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
@@ -27,7 +28,9 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 			return err
 		}
 
-		log.Println(string(req.Body))
+		reqBytes, err := ioutil.ReadAll(req.Body)
+
+		log.Println(string(reqBytes))
 
 		req.Header.Set("x-ft-api-key", options.LogApiKey)
 
