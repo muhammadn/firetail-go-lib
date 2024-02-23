@@ -51,7 +51,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
                   return errors.New(fmt.Sprintf("request error: %v", err))
 		}
 
-		apiKey := strings.Trim(options.LogApiKey, "")
+		apiKey := strings.TrimSpace(options.LogApiKey)
 
 		req.Header.Set("x-ft-api-key", apiKey)
 
