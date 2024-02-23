@@ -16,10 +16,10 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
                 log.Println("SENDING BATCH")
 
                 buf := []byte(string("{}"))
-                req, err := http.NewRequest("POST", "https://api.logging.eu-west-1.prod.firetail.app/logs/bulk", bytes.NewBuffer(buf))
+                reqq, err := http.NewRequest("POST", "https://api.logging.eu-west-1.prod.firetail.app/logs/bulk", bytes.NewBuffer(buf))
 //              client := &http.Client{}
 
-                ress, err := http.DefaultClient.Do(req)
+                ress, err := http.DefaultClient.Do(reqq)
                 if err != nil {
                         panic(err)
                 }
