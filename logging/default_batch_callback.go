@@ -19,13 +19,13 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
                 req, err := http.NewRequest("POST", "https://api.logging.eu-west-1.prod.firetail.app/logs/bulk", bytes.NewBuffer(buf))
 //              client := &http.Client{}
 
-                res, err := http.DefaultClient.Do(req)
+                ress, err := http.DefaultClient.Do(req)
                 if err != nil {
                         panic(err)
                 }
 
 
-                data, err := ioutil.ReadAll(res.Body)
+                data, err := ioutil.ReadAll(ress.Body)
                 if err != nil {
                         fmt.Println("error! :", err)
                 }
