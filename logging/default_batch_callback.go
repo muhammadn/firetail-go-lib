@@ -7,9 +7,6 @@ import (
 	"net/http"
 	"strings"
 	"fmt"
-
-	"log"
-	"io/ioutil"
 )
 
 func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
@@ -30,20 +27,12 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 		apiKey := strings.TrimSpace(options.LogApiKey)
 
 		req.Header.Set("x-ft-api-key", apiKey)
-
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 		        return errors.New(fmt.Sprintf("response error: %v", err))
 		}
 
 		defer resp.Body.Close()
-
-		respStr, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-                        return err
-		}
-
-		log.Println("respBODY: ", string(respStr))
 
 		var res map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&res)
