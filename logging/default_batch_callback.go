@@ -28,9 +28,12 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 			return err
 		}
 
-		reqBytes, err := ioutil.ReadAll(req.Body)
+		reqB, err = ioutil.ReadAll(req.Body)
+		if err != nil {
+                        return err
+		}
 
-		log.Println(string(reqBytes))
+		log.Println(string(reqB))
 
 		req.Header.Set("x-ft-api-key", options.LogApiKey)
 
