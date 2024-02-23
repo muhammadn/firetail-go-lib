@@ -53,7 +53,8 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			return err
+		//	return err
+                        panic(err)
 		}
 
 		defer resp.Body.Close()
