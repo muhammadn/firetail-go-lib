@@ -34,15 +34,13 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 			return err
 		}
 
-                defer resp.Body.Close()
+                log.Println("respBODY: ", resp.Body)
 
 		var res map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&res)
 		if res["message"] != "success" {
 			return errors.New(fmt.Sprintf("got err response from firetail api: %v", res))
 		}
-
-		log.Println("respBODY: ", resp.Body)
 
 		return nil
 	}
