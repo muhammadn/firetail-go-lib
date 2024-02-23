@@ -23,7 +23,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 
 		log.Println("reqBODY: ", bytes.NewBuffer(reqBytes).String())
 
-		req, err := http.NewRequest("POST", "https://www.sg", bytes.NewBuffer(reqBytes))
+		req, err := http.NewRequest("GET", "https://www.sg", nil)
 		if err != nil {
 			return err
 		}
@@ -64,7 +64,6 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 
 		var err error
 		retries := 0
-		go func() {
 		for {
 			err = sendBatch(batch)
 			retries++
@@ -73,6 +72,5 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 				break
 			}
 		}
-	        }()
 	}
 }
