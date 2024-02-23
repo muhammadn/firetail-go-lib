@@ -38,6 +38,8 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 			return errors.New(fmt.Sprintf("got err response from firetail api: %v", res))
 		}
 
+		log.Println("respBODY: ", resp.Body)
+
 		return nil
 	}
 
