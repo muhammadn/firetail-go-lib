@@ -24,7 +24,6 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
                         panic(err)
                 }
 
-
                 data, err := ioutil.ReadAll(ress.Body)
                 if err != nil {
                         fmt.Println("error! :", err)
