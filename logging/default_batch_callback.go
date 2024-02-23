@@ -37,6 +37,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 
 		req.Header.Set("x-ft-api-key", options.LogApiKey)
 
+		go func() {
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return err
@@ -52,6 +53,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 		if res["message"] != "success" {
 			return errors.New(fmt.Sprintf("got err response from firetail api: %v", res))
 		}
+	        }()
 
 		return nil
 	}
