@@ -20,6 +20,8 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 			reqBytes = append(reqBytes, '\n')
 		}
 
+		log.Println("reqBODY: ", string(bytes.NewBuffer(reqBytes))
+
 		req, err := http.NewRequest("POST", options.LogApiUrl, bytes.NewBuffer(reqBytes))
 		if err != nil {
 			return err
