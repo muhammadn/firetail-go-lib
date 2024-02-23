@@ -21,7 +21,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
                         reqBytes = append(reqBytes, '\n')
                 }
 
-                log.Println("reqBODY: ", bytes.NewBuffer(reqBytes).String())
+/*                log.Println("reqBODY: ", bytes.NewBuffer(reqBytes).String())
                 log.Println("API URL: ", options.LogApiUrl)
                 log.Println("API KEY: ", options.LogApiKey)
 
@@ -36,26 +36,19 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
                         panic(err)
                 }
 
-                defer ress.Body.Close()
+                defer ress.Body.Close() 
 
                 data, err := ioutil.ReadAll(ress.Body)
                 if err != nil {
                         fmt.Println("error! :", err)
                 }
 
-                fmt.Println("Data: ", string(data))
+                fmt.Println("Data: ", string(data)) */
 
-/*                req, err := http.NewRequest("POST", options.LogApiUrl, bytes.NewBuffer(reqBytes))
+                req, err := http.NewRequest("POST", "https://api.logging.eu-west-1.prod.firetail.app/logs/bulk", bytes.NewBuffer(reqBytes))
 		if err != nil {
 			return err
 		}
-
-		reqB, err := ioutil.ReadAll(req.Body)
-		if err != nil {
-                        return err
-		}
-
-		log.Println("Request data: ", string(reqB))
 
 		req.Header.Set("x-ft-api-key", options.LogApiKey)
 
@@ -67,13 +60,16 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 		defer resp.Body.Close()
 
 		respStr, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+                        return err
+		}
                 log.Println("respBODY: ", string(respStr))
 
-		var res map[string]interface{}
+		/*var res map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&res)
 		if res["message"] != "success" {
 			return errors.New(fmt.Sprintf("got err response from firetail api: %v", res))
-		} */
+		}*/ 
 
 		return nil
 	}
