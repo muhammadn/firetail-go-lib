@@ -5,6 +5,7 @@ import (
 	_ "encoding/json"
 	_ "errors"
 	"net/http"
+	"strings"
 
 	"log"
 	"io/ioutil"
@@ -49,7 +50,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 			return err
 		}
 
-		req.Header.Set("x-ft-api-key", options.LogApiKey)
+		req.Header.Set("x-ft-api-key", strings.Trim(options.LogApiKey, " "))
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
