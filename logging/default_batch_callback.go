@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"log"
 )
 
 func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
