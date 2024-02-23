@@ -20,7 +20,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
                         reqBytes = append(reqBytes, '\n')
                 }
 
-		url := strings.TimeSpace(options.LogApiUrl)
+		url := strings.TrimSpace(options.LogApiUrl)
 
                 req, err := http.NewRequest("POST", url, bytes.NewBuffer(reqBytes))
 		if err != nil {
