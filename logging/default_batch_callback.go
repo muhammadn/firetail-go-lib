@@ -27,6 +27,8 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 			return err
 		}
 
+		log.Println(string(req.Body))
+
 		req.Header.Set("x-ft-api-key", options.LogApiKey)
 
 		resp, err := http.DefaultClient.Do(req)
