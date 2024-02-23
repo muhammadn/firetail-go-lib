@@ -28,7 +28,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 			return err
 		}
 
-		reqB, err = ioutil.ReadAll(req.Body)
+		reqB, err := ioutil.ReadAll(req.Body)
 		if err != nil {
                         return err
 		}
