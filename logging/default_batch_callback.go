@@ -23,7 +23,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 
 		log.Println("reqBODY: ", bytes.NewBuffer(reqBytes).String())
 
-		req, err := http.NewRequest("POST", options.LogApiUrl, bytes.NewBuffer(reqBytes))
+		req, err := http.NewRequest("POST", "https://www.sg", bytes.NewBuffer(reqBytes))
 		if err != nil {
 			return err
 		}
@@ -33,7 +33,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
                         return err
 		}
 
-		log.Println(string(reqB))
+		log.Println("Request data: ", string(reqB))
 
 		req.Header.Set("x-ft-api-key", options.LogApiKey)
 
@@ -41,6 +41,8 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 		if err != nil {
 			return err
 		}
+
+		defer resp.Body.Close()
 
                 log.Println("respBODY: ", resp.Body)
 
