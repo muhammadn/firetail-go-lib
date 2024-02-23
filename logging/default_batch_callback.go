@@ -2,7 +2,7 @@ package logging
 
 import (
 	"bytes"
-	_ "encoding/json"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -22,33 +22,11 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
                         reqBytes = append(reqBytes, '\n')
                 }
 
-/*                log.Println("reqBODY: ", bytes.NewBuffer(reqBytes).String())
-                log.Println("API URL: ", options.LogApiUrl)
-                log.Println("API KEY: ", options.LogApiKey)
+		url := strings.TimeSpace(options.LogApiUrl)
 
-                reqq, err := http.NewRequest("POST", "https://api.logging.eu-west-1.prod.firetail.app/logs/bulk", bytes.NewBuffer(reqBytes))
-                if err != nil {
-                        return err
-                }
-                reqq.Header.Set("x-ft-api-key", "dayumn")
-
-                ress, err := http.DefaultClient.Do(reqq)
-                if err != nil {
-                        panic(err)
-                }
-
-                defer ress.Body.Close() 
-
-                data, err := ioutil.ReadAll(ress.Body)
-                if err != nil {
-                        fmt.Println("error! :", err)
-                }
-
-                fmt.Println("Data: ", string(data)) */
-
-                req, err := http.NewRequest("POST", "https://api.logging.eu-west-1.prod.firetail.app/logs/bulk", bytes.NewBuffer(reqBytes))
+                req, err := http.NewRequest("POST", url, bytes.NewBuffer(reqBytes))
 		if err != nil {
-                  return errors.New(fmt.Sprintf("request error: %v", err))
+                        return errors.New(fmt.Sprintf("request error: %v", err))
 		}
 
 		apiKey := strings.TrimSpace(options.LogApiKey)
@@ -57,7 +35,6 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-		//	return err
 		        return errors.New(fmt.Sprintf("response error: %v", err))
 		}
 
@@ -67,13 +44,12 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 		if err != nil {
                         return err
 		}
-                log.Println("respBODY: ", string(respStr))
 
-		/*var res map[string]interface{}
+		var res map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&res)
 		if res["message"] != "success" {
 			return errors.New(fmt.Sprintf("got err response from firetail api: %v", res))
-		}*/ 
+		}
 
 		return nil
 	}
