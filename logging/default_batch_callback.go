@@ -3,9 +3,10 @@ package logging
 import (
 	"bytes"
 	_ "encoding/json"
-	_ "errors"
+	"errors"
 	"net/http"
 	"strings"
+	"fmt"
 
 	"log"
 	"io/ioutil"
