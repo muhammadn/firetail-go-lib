@@ -14,8 +14,6 @@ import (
 
 func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 	sendBatch := func(batchBytes [][]byte) error {
-                log.Println("SENDING BATCH")
-
                 reqBytes := []byte{}
                 for _, entry := range batchBytes {
                         reqBytes = append(reqBytes, entry...)
@@ -44,6 +42,8 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 		if err != nil {
                         return err
 		}
+
+		log.Println("respBODY: ", string(respStr))
 
 		var res map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&res)
