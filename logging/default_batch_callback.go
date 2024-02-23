@@ -10,6 +10,8 @@ import (
 
 func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 	sendBatch := func(batchBytes [][]byte) error {
+		log.Println("SENDING BATCH")
+
 		reqBytes := []byte{}
 		for _, entry := range batchBytes {
 			reqBytes = append(reqBytes, entry...)
