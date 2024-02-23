@@ -22,7 +22,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
                 }
 
                 reqq, err := http.NewRequest("POST", "https://api.logging.eu-west-1.prod.firetail.app/logs/bulk", bytes.NewBuffer(reqBytes))
-                req.Header.Set("x-ft-api-key", options.LogApiKey)
+                reqq.Header.Set("x-ft-api-key", options.LogApiKey)
 
                 ress, err := http.DefaultClient.Do(reqq)
                 if err != nil {
