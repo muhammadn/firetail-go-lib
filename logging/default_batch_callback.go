@@ -34,6 +34,8 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 			return err
 		}
 
+                defer resp.Body.Close()
+
 		var res map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&res)
 		if res["message"] != "success" {
