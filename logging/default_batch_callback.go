@@ -2,8 +2,8 @@ package logging
 
 import (
 	"bytes"
-	"encoding/json"
-	"errors"
+	_ "encoding/json"
+	_ "errors"
 	"fmt"
 	"net/http"
 
