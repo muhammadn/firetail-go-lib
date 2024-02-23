@@ -44,7 +44,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 
 		defer resp.Body.Close()
 
-                log.Println("respBODY: ", ioutil.ReadAll(resp.Body))
+                log.Println("respBODY: ", string(ioutil.ReadAll(resp.Body)))
 
 		var res map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&res)
