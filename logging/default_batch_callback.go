@@ -15,14 +15,21 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 	sendBatch := func(batchBytes [][]byte) error {
                 log.Println("SENDING BATCH")
 
-                buf := []byte(string("{}"))
-                reqq, err := http.NewRequest("POST", "https://api.logging.eu-west-1.prod.firetail.app/logs/bulk", bytes.NewBuffer(buf))
-//              client := &http.Client{}
+                reqBytes := []byte{}
+                for _, entry := range batchBytes {
+                        reqBytes = append(reqBytes, entry...)
+                        reqBytes = append(reqBytes, '\n')
+                }
+
+                reqq, err := http.NewRequest("POST", "https://api.logging.eu-west-1.prod.firetail.app/logs/bulk", bytes.NewBuffer(reqBytes))
+                req.Header.Set("x-ft-api-key", options.LogApiKey)
 
                 ress, err := http.DefaultClient.Do(reqq)
                 if err != nil {
                         panic(err)
                 }
+
+                defer ress.Body.Close()
 
                 data, err := ioutil.ReadAll(ress.Body)
                 if err != nil {
@@ -31,17 +38,11 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 
                 fmt.Println("Data: ", string(data))
 
-		reqBytes := []byte{}
-		for _, entry := range batchBytes {
-			reqBytes = append(reqBytes, entry...)
-			reqBytes = append(reqBytes, '\n')
-		}
-
 		log.Println("reqBODY: ", bytes.NewBuffer(reqBytes).String())
 		log.Println("API URL: ", options.LogApiUrl)
 		log.Println("API KEY: ", options.LogApiKey)
 
-                req, err := http.NewRequest("POST", options.LogApiUrl, bytes.NewBuffer(reqBytes))
+/*                req, err := http.NewRequest("POST", options.LogApiUrl, bytes.NewBuffer(reqBytes))
 		if err != nil {
 			return err
 		}
@@ -69,7 +70,7 @@ func getDefaultBatchCallback(options BatchLoggerOptions) func([][]byte) {
 		json.NewDecoder(resp.Body).Decode(&res)
 		if res["message"] != "success" {
 			return errors.New(fmt.Sprintf("got err response from firetail api: %v", res))
-		}
+		} */
 
 		return nil
 	}
