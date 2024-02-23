@@ -4,7 +4,6 @@ import (
 	"bytes"
 	_ "encoding/json"
 	_ "errors"
-	"fmt"
 	"net/http"
 
 	"log"
